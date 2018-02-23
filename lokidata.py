@@ -37,6 +37,15 @@ class LokiData:
                tr[i,:]=1.
         return tr
 
+    def check_data_consistency(self):
+        intsamp=1E6
+        for comp in (self.streams).keys():
+            for sta in (self.streams[comp]).keys():
+                if (int(self.deltat*intsamp)!=int(self.streams[comp][sta][0]*intsamp)):
+                    raise ValueError('Error!! All trace must have the same sampling rate')
+
+
+
     def time_extractor(self, tp, ts, data_stations, db_stations):
         nsta=len(self.stations)
         nxyz= num.size(tp[self.stations[0]])

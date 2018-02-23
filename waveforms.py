@@ -30,37 +30,28 @@ class Waveforms:
         except:
             raise WaveformLoadingError('Error: data not read for the event: %s' %(event_path))
         self.station_list()
-        self.check_data_consistency()
-
-    def check_data_consistency(self):
-        intsamp=1E6
-        for comp in streams.keys():
-            for sta in st.keys():
-                if (int(self.deltat*intsamp)!=int(stream[comp][sta][0]*intsamp)):
-                    raise ValueError('Error!! All trace must have the same sampling rate')
 
     def station_list(self):
         data_stalist=[]
-        for comp in self.streams.keys():
-            for sta in self.streams[comp].keys():
+        for comp in (self.stream).keys():
+            for sta in (self.stream[comp]).keys():
                 if sta not in data_stalist:
                     data_stalist.append(sta)
         self.data_stations=set(data_stalist)
 
     def load_waveforms(self, event_path, extension, comps):
         files=os.path.join(event_path,extension)
-        stream=read(files)
+        traces=read(files)
         self.ns=0
-        self.evid=str(stream[0].stats.starttime)
-        self.deltat=stream[0].stats.delta
-        streams={}
+        self.evid=str(traces[0].stats.starttime)
+        self.deltat=traces[0].stats.delta
+        self.stream={}
         for comp in comps:
-            streams[comp]={}
-            for tr in stream:
+            self.stream[comp]={}
+            for tr in traces:
                 if tr.stats.channel[-1]==comp:
                     self.ns=num.maximum(num.size(tr.data),self.ns)
-                    streams[comp][tr.stats.station]=[tr.stats.delta, tr.data]
-        self.streams=streams
+                    self.stream[comp][tr.stats.station]=[tr.stats.delta, tr.data]
 
 class WaveformLoadingError(Exception):
     pass
