@@ -1,13 +1,31 @@
+import Traveltimes
+import Waveforms
 
 
+class LokiData:
 
-    def select_data(self, comp, db_stations, derivative):
-        check_data_consistency(self.streams)
-        self.stations=(station_list(self.streams) & db_stations)
-        self.nstation=len(self.stations)
+    def __init__(self, tobj, wobj, derivative=True):
+        self.traces=loki_input(self, wobj, tobj, derivative):
+
+    def loki_input(self, wobj, tobj, derivative):
+        comp=tuple((wobj.stream).keys())
+        if len(comp)==3:
+            xtr=self.select_data(comp[0], wobj.data_stations, tobj.db_stations, derivative)
+            ytr=self.select_data(comp[1], wobj.data_stations, tobj.db_stations, derivative)
+            ztr=self.select_data(comp[2], wobj.data_stations, tobj.db_stations, derivative)
+            return (xtr, ytr, ztr)
+        elif len(comp)==1:
+            ztr=self.select_data(comp, db_stations, derivative)
+            return (ztr,)
+        else:
+            raise ValueError('Traces must have 1 or 3 components!')
+
+    def select_data(self, comp, data_stations, db_stations, derivative):
+        self.stations=tuple(data_stations & db_stations)
+        self.nstation=num.size(self.stations)
         tr=num.zeros([self.nstation,self.ns])
         stream=self.streams[comp]
-        for i,sta in zip(range(self.nstation),self.stations):
+        for i,sta in enumerate(self.stations):
             if sta in stream.keys():
                nstr=num.size(stream[sta])
                tr[i,0:nstr]=stream[sta][1]
@@ -18,19 +36,15 @@
                tr[i,:]=1.
         return tr
 
-
-    def loki_input(self, comp, db_stations, derivative=True):
-        if len(comp)==3:
-            xtr=self.select_data(comp[0], db_stations, derivative)
-            ytr=self.select_data(comp[1], db_stations, derivative)
-            ztr=self.select_data(comp[2], db_stations, derivative)
-            return (xtr, ytr, ztr)
-        elif len(comp)==1:
-            ztr=self.select_data(comp, db_stations, derivative)
-            return (ztr,)
-        else:
-            raise ValueError('Traces must have 1 or 3 components!')
-
+    def time_extractor(self, tp, ts, data_stations, db_stations):
+        nsta=len(self.stations)
+        nxyz= num.size(tp[self.stations[0]])
+        tp_mod=num.zeros([nxyz,nsta])
+        ts_mod=num.zeros([nxyz,nsta])
+        for i,sta in enumerate(self.stations):
+            tp_mod[:,i]=tp[sta]
+            ts_mod[:,i]=ts[sta]
+        return tp_mod, ts_mod
 
 
     def stacking_function(self):

@@ -17,11 +17,8 @@
 
 import os, sys
 import numpy as num
-from obspy.core   import read
+from obspy.core import read
 import datetime
-
-class WaveformLoadingError(Exception):
-    pass
 
 class Waveforms:
 
@@ -64,3 +61,6 @@ class Waveforms:
                     self.ns=num.maximum(num.size(tr.data),self.ns)
                     streams[comp][tr.stats.station]=[tr.stats.delta, tr.data]
         self.streams=streams
+
+class WaveformLoadingError(Exception):
+    pass
