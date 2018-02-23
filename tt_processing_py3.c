@@ -17,7 +17,7 @@
 int tt_f2i(double dt, long int nxyz, long int nsta, double tp[nxyz][nsta], double ts[nxyz][nsta], int itp[nxyz][nsta], int its[nxyz][nsta], int nproc);
 /* Python wrapper of the C function stacking */
 
-static char module_docstring[]="Module for computing of the traveltime processing";
+static char module_docstring[]="Module to convert traveltimes form float to integers";
 static char tt_f2i_docstring[]="traveltime processing";
 
 
