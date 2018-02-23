@@ -3,7 +3,6 @@ import Waveforms
 import DET_STALTA
 import LOC_STALTA
 
-
 class LokiData:
 
     def __init__(self, tobj, wobj, derivative=True):
