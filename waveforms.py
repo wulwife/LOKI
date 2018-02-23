@@ -17,7 +17,6 @@
 
 import os, sys
 import numpy as num
-import LatLongUTMconversion
 import C_STALTA
 import tt_processing
 from obspy.core   import read
@@ -34,6 +33,7 @@ class waveforms:
         try:
             self.load_waveforms(event_path, extension, comps)
             self.station_list()
+            self.check_data_consistency()
         except:
             print('Error: data not read for the event: ', event_path)
 
@@ -67,6 +67,14 @@ class waveforms:
                     streams[comp][tr.stats.station]=[tr.stats.delta, tr.data]
         self.streams=streams
 
+
+
+
+
+#add class
+
+
+
     def select_data(self, comp, db_stations, derivative):
         check_data_consistency(self.streams)
         self.stations=(station_list(self.streams) & db_stations)
@@ -83,6 +91,7 @@ class waveforms:
             else:
                tr[i,:]=1.
         return tr
+
 
     def loki_input(self, comp, db_stations, derivative=True):
         if len(comp)==3:

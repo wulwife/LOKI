@@ -20,7 +20,6 @@ import LatLongUTMconversion as ll
 
 class traveltimes:
 
-
     def __init__(self, db_path, hdr_filename):
         if not os.path.isdir(db_path):
            print('Error: data or database path do not exist')
