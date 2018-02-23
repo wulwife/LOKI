@@ -18,7 +18,7 @@
 import os, sys
 import numpy as num
 from obspy.core import read
-import datetime
+from datetime import datetime
 
 class Waveforms:
 
@@ -42,16 +42,13 @@ class Waveforms:
     def load_waveforms(self, event_path, extension, comps):
         files=os.path.join(event_path,extension)
         traces=read(files)
-        self.ns=0
-        self.evid=str(traces[0].stats.starttime)
-        self.deltat=traces[0].stats.delta
         self.stream={}
         for comp in comps:
             self.stream[comp]={}
             for tr in traces:
                 if tr.stats.channel[-1]==comp:
-                    self.ns=num.maximum(num.size(tr.data),self.ns)
-                    self.stream[comp][tr.stats.station]=[tr.stats.delta, tr.data]
+                    dtime=datetime.strptime(str(tr.stats.starttime),"%Y-%m-%dT%H:%M:%S.%fZ")
+                    self.stream[comp][tr.stats.station]=[dtime, tr.stats.delta, tr.data]
 
 class WaveformLoadingError(Exception):
     pass
