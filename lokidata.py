@@ -6,6 +6,7 @@ import LOC_STALTA
 class LokiData:
 
     def __init__(self, tobj, wobj, derivative=True):
+        self.check_sampling_rate(self,wobj)
         self.traces=loki_input(self, wobj, tobj, derivative):
 
     def loki_input(self, wobj, tobj, derivative):
@@ -37,14 +38,31 @@ class LokiData:
                tr[i,:]=1.
         return tr
 
-    def check_data_consistency(self):
+    def check_sampling_rate(self,wobj):
         intsamp=1E6
-        for comp in (self.streams).keys():
-            for sta in (self.streams[comp]).keys():
-                if (int(wobj.deltat*intsamp)!=int(self.streams[comp][sta][0]*intsamp)):
-                    raise ValueError('Error!! All trace must have the same sampling rate')
+        deltas=[]
+        for comp in (wobj.stream).keys():
+            for sta in (wobj.stream[comp]).keys():
+                deltas.append(int(wobj.stream[comp][sta][1]))
+        deltas=num.array(deltas)
+        ideltas=num.unique((deltas*intsamp).astype(int))
+        if num.size(ideltas)==1:
+           self.deltat=deltas[0]
+        else:
+           raise ValueError('Error!! All trace must have the same sampling rate')
 
-
+    def check_starting_time(self,wobj):
+        intsamp=1E6
+        deltas=[]
+        for comp in (wobj.stream).keys():
+            for sta in (wobj.stream[comp]).keys():
+                deltas.append(int(wobj.stream[comp][sta][1]))
+        deltas=num.array(deltas)
+        ideltas=num.unique((deltas*intsamp).astype(int))
+        if num.size(ideltas)==1:
+           self.deltat=deltas[0]
+        else:
+           raise ValueError('Error!! All trace must have the same starting time')
 
     def time_extractor(self, tp, ts, data_stations, db_stations):
         nsta=len(self.stations)
