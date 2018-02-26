@@ -1,6 +1,8 @@
 import traveltimes
 import waveforms
 from datetime import datetime
+import numpy as num
+import matplotlib.pyplot as plt
 
 class LokiData:
 
@@ -14,7 +16,7 @@ class LokiData:
         deltas=[]
         for comp in (wobj.stream).keys():
             for sta in (wobj.stream[comp]).keys():
-                deltas.append(int(wobj.stream[comp][sta][1]))
+                deltas.append(wobj.stream[comp][sta][1])
         deltas=num.array(deltas)
         ideltas=num.unique((deltas*intsamp).astype(int))
         if num.size(ideltas)==1:
@@ -25,23 +27,21 @@ class LokiData:
     def check_starting_time(self,wobj):
         intsamp=1E6
         dtimes=[]
+        self.ns=0
         for comp in (wobj.stream).keys():
             for sta in (wobj.stream[comp]).keys():
                 dtimes.append(wobj.stream[comp][sta][0])
-        dtime0=dtime[0]
-        for dtime in dtimes:
-            if num.abs((dtime0-dtime).total_seconds())<2*wobj.deltat:
-               pass
-            else:
-               raise ValueError('Error!! All trace must have the same starting time')
-        self.evid=dtime0.isoformat()
+                if self.ns<num.size(wobj.stream[comp][sta][2]):
+                   self.ns=num.size(wobj.stream[comp][sta][2])
+        self.dtime_max=max(dtimes)
+        self.evid=(self.dtime_max).isoformat()
 
     def loki_input(self, wobj, tobj, derivative):
         comp=tuple((wobj.stream).keys())
         if len(comp)==3:
-            xtr=self.select_data(comp[0], wobj.data_stations, tobj.db_stations, derivative)
-            ytr=self.select_data(comp[1], wobj.data_stations, tobj.db_stations, derivative)
-            ztr=self.select_data(comp[2], wobj.data_stations, tobj.db_stations, derivative)
+            xtr=self.select_data(comp[0], wobj, tobj.db_stations, derivative)
+            ytr=self.select_data(comp[1], wobj, tobj.db_stations, derivative)
+            ztr=self.select_data(comp[2], wobj, tobj.db_stations, derivative)
             return (xtr, ytr, ztr)
         elif len(comp)==1:
             ztr=self.select_data(comp, wobj.data_stations, db_stations, derivative)
@@ -49,18 +49,18 @@ class LokiData:
         else:
             raise ValueError('Traces must have 1 or 3 components!')
 
-    def select_data(self, comp, data_stations, db_stations, derivative):
-        self.stations=tuple(data_stations & db_stations)
+    def select_data(self, comp, wobj, db_stations, derivative):
+        self.stations=tuple(wobj.data_stations & db_stations)
         self.nstation=num.size(self.stations)
         tr=num.zeros([self.nstation,self.ns])
-        stream=self.streams[comp]
+        stream=wobj.stream[comp]
         for i,sta in enumerate(self.stations):
-            if sta in stream.keys():
-               nstr=num.size(stream[sta])
-               tr[i,0:nstr]=stream[sta][1]
-               if derivative:
-                  tr[i,0:nstr-1]=((tr[i,1:]-tr[i,0:nstr-1])/self.deltat)
-                  tr[i,nstr-1]=0.
+            nstr=num.size(stream[sta][2])
+            idt=num.int((self.dtime_max-stream[sta][0]).total_seconds()/self.deltat)
+            tr[i,0:nstr-idt]=stream[sta][2][idt:]
+            if derivative:
+               tr[i,1:self.ns]=((tr[i,1:]-tr[i,0:self.ns-1])/self.deltat)
+               tr[i,0]=0.
             else:
                tr[i,:]=1.
         return tr

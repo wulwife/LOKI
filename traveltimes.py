@@ -18,7 +18,7 @@ import numpy as num
 import matplotlib.pyplot as plt
 import LatLongUTMconversion as ll
 
-class traveltimes:
+class Traveltimes:
 
     def __init__(self, db_path, hdr_filename):
         if not os.path.isdir(db_path):
