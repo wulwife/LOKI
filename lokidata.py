@@ -43,7 +43,7 @@ class LokiData:
             ztr=self.select_data(comp[2], wobj.data_stations, tobj.db_stations, derivative)
             return (xtr, ytr, ztr)
         elif len(comp)==1:
-            ztr=self.select_data(comp, db_stations, derivative)
+            ztr=self.select_data(comp, wobj.data_stations, db_stations, derivative)
             return (ztr,)
         else:
             raise ValueError('Traces must have 1 or 3 components!')

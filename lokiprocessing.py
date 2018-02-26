@@ -1,3 +1,11 @@
+import numpy as num
+import DET_STALTA
+import LOC_STALTA
+
+class LokiProcessing:
+    def __init__(self, arg):
+        self.arg = arg
+
     def charfunc_erg(self, ztr, ytr, xtr):
         obs_dataV=(ztr**2)
         obs_dataH1=(xtr**2)
