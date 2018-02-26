@@ -1,13 +1,41 @@
-import Traveltimes
-import Waveforms
+import traveltimes
+import waveforms
+import datetime
 import DET_STALTA
 import LOC_STALTA
 
 class LokiData:
 
     def __init__(self, tobj, wobj, derivative=True):
-        self.check_sampling_rate(self,wobj)
+        self.check_sampling_rate(wobj)
+        self.check_starting_time(wobj)
         self.traces=loki_input(self, wobj, tobj, derivative):
+
+    def check_sampling_rate(self,wobj):
+        intsamp=1E6
+        deltas=[]
+        for comp in (wobj.stream).keys():
+            for sta in (wobj.stream[comp]).keys():
+                deltas.append(int(wobj.stream[comp][sta][1]))
+        deltas=num.array(deltas)
+        ideltas=num.unique((deltas*intsamp).astype(int))
+        if num.size(ideltas)==1:
+           self.deltat=deltas[0]
+        else:
+           raise ValueError('Error!! All trace must have the same sampling rate')
+
+    def check_starting_time(self,wobj):
+        intsamp=1E6
+        dtimes=[]
+        for comp in (wobj.stream).keys():
+            for sta in (wobj.stream[comp]).keys():
+                dtimes.append(wobj.stream[comp][sta][0]))
+        dtime0=dtime[0]
+        for dtime in dtimes:
+            if num.abs((dtime0-dtime).total_seconds())<2*wobj.deltat
+               pass
+            else:
+               raise ValueError('Error!! All trace must have the same starting time')
 
     def loki_input(self, wobj, tobj, derivative):
         comp=tuple((wobj.stream).keys())
@@ -38,33 +66,7 @@ class LokiData:
                tr[i,:]=1.
         return tr
 
-    def check_sampling_rate(self,wobj):
-        intsamp=1E6
-        deltas=[]
-        for comp in (wobj.stream).keys():
-            for sta in (wobj.stream[comp]).keys():
-                deltas.append(int(wobj.stream[comp][sta][1]))
-        deltas=num.array(deltas)
-        ideltas=num.unique((deltas*intsamp).astype(int))
-        if num.size(ideltas)==1:
-           self.deltat=deltas[0]
-        else:
-           raise ValueError('Error!! All trace must have the same sampling rate')
-
-    def check_starting_time(self,wobj):
-        intsamp=1E6
-        deltas=[]
-        for comp in (wobj.stream).keys():
-            for sta in (wobj.stream[comp]).keys():
-                deltas.append(int(wobj.stream[comp][sta][1]))
-        deltas=num.array(deltas)
-        ideltas=num.unique((deltas*intsamp).astype(int))
-        if num.size(ideltas)==1:
-           self.deltat=deltas[0]
-        else:
-           raise ValueError('Error!! All trace must have the same starting time')
-
-    def time_extractor(self, tp, ts, data_stations, db_stations):
+    def time_extractor(self, tp, ts):
         nsta=len(self.stations)
         nxyz= num.size(tp[self.stations[0]])
         tp_mod=num.zeros([nxyz,nsta])
