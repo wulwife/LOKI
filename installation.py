@@ -2,12 +2,7 @@ from distutils.core import setup, Extension
 import numpy
 
 # define the extension module
-ps_detection = Extension('ps_detection', sources=['ps_detection_py3_omp.c'],
-                          include_dirs=[numpy.get_include()],
-                          extra_compile_args=['-O3','-fopenmp'],
-                          extra_link_args=['-lgomp'])
-
-ps1s2_detection = Extension('ps1s2_detection', sources=['ps1s2_detection_py3_omp.c'],
+ps_detection = Extension('detection', sources=['ps_detection_py3_omp.c'],
                           include_dirs=[numpy.get_include()],
                           extra_compile_args=['-O3','-fopenmp'],
                           extra_link_args=['-lgomp'])
@@ -23,7 +18,7 @@ tt_processing = Extension('tt_processing', sources=['tt_processing_py3.c'],
                           extra_compile_args=['-O3','-fopenmp'],
                           extra_link_args=['-lgomp'])
 
-C_STALTA = Extension('LOC_STALTA', sources=['stalta_py3.c'],
+LOC_STALTA = Extension('LOC_STALTA', sources=['stalta_py3.c'],
                           include_dirs=[numpy.get_include()],
                           extra_compile_args=['-O3'])
 

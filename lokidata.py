@@ -65,7 +65,6 @@ class LokiData:
                tr[i,:]=1.
         return tr
 
-
     def time_extractor(self, tp, ts):
         nsta=len(self.stations)
         nxyz= num.size(tp[self.stations[0]])

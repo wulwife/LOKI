@@ -23,7 +23,7 @@ class StackingFunction:
         if ergz:
            obs_dataV=(traces[2]**2)
            return obs_dataV
-        else
+        else:
            obs_dataV=(traces[2]**2)
            obs_dataH=(traces[0]**2)*(traces[1]**2)
            return obs_dataV, obs_dataH
