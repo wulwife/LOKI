@@ -23,7 +23,7 @@ tt_processing = Extension('tt_processing', sources=['tt_processing_py3.c'],
                           extra_compile_args=['-O3','-fopenmp'],
                           extra_link_args=['-lgomp'])
 
-C_STALTA = Extension('C_STALTA', sources=['stalta_py3.c'],
+C_STALTA = Extension('LOC_STALTA', sources=['stalta_py3.c'],
                           include_dirs=[numpy.get_include()],
                           extra_compile_args=['-O3'])
 
