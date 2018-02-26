@@ -7,7 +7,7 @@ class LokiData:
     def __init__(self, tobj, wobj, derivative=True):
         self.check_sampling_rate(wobj)
         self.check_starting_time(wobj)
-        self.traces=loki_input(self, wobj, tobj, derivative):
+        self.traces=self.loki_input(wobj, tobj, derivative)
 
     def check_sampling_rate(self,wobj):
         intsamp=1E6
@@ -34,6 +34,7 @@ class LokiData:
                pass
             else:
                raise ValueError('Error!! All trace must have the same starting time')
+        self.evid=dtime0.isoformat()
 
     def loki_input(self, wobj, tobj, derivative):
         comp=tuple((wobj.stream).keys())
@@ -58,7 +59,7 @@ class LokiData:
                nstr=num.size(stream[sta])
                tr[i,0:nstr]=stream[sta][1]
                if derivative:
-                  tr[i,0:nstr-1]=((tr[i,1:]-tr[i,0:nstr-1])/wobj.deltat)
+                  tr[i,0:nstr-1]=((tr[i,1:]-tr[i,0:nstr-1])/self.deltat)
                   tr[i,nstr-1]=0.
             else:
                tr[i,:]=1.
@@ -67,9 +68,9 @@ class LokiData:
     def time_extractor(self, tp, ts):
         nsta=len(self.stations)
         nxyz= num.size(tp[self.stations[0]])
-        tp_mod=num.zeros([nxyz,nsta])
+        tp_mod=num.zeros([nxyz,nsta]) #optimize with pointers to tp[sta] and ts[sta]
         ts_mod=num.zeros([nxyz,nsta])
         for i,sta in enumerate(self.stations):
             tp_mod[:,i]=tp[sta]
             ts_mod[:,i]=ts[sta]
-        return tp_mod, ts_mod
+        return (tp_mod, ts_mod)

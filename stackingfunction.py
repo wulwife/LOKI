@@ -1,18 +1,20 @@
 import numpy as num
+import lokidata
 import DET_STALTA
 import LOC_STALTA
 
-class LokiProcessing:
-    def __init__(self, arg):
-        self.arg = arg
 
-    def charfunc_erg(self, ztr, ytr, xtr):
+class StackingFunction:
+    def __init__(self, lobj, cfuncP='erg', cfuncS='pca'):
+        if
+          self.charfunc_erg
+
+    def cfunc_erg(self, ztr, ytr, xtr):
         obs_dataV=(ztr**2)
-        obs_dataH1=(xtr**2)
-        obs_dataH2=(ytr**2)
-        return obs_dataV, obs_dataH1, obs_dataH2
+        obs_dataH=(xtr**2)*(ytr**2)
+        return (obs_dataV, obs_dataH)
 
-    def charfunc_ps(self, xtr, ytr, ztr, epsilon=0.001):
+    def cfunc_ps(self, xtr, ytr, ztr, epsilon=0.001):
         nsta,nsamp=num.shape(xtr)
         obs_dataH=num.zeros([nsta,nsamp]); obs_dataV=num.zeros([nsta,nsamp])
         obs_dataH1=hilbert(xtr); obs_dataH2=hilbert(ytr); obs_dataH3=hilbert(ztr)
@@ -30,9 +32,9 @@ class LokiProcessing:
                 obs_dataH[i,j]=(s2d[0]**2)
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
             obs_dataV[i,:]=obs_dataV[i,:]/num.max(obs_dataV[i,:])
-        return obs_dataV, obs_dataH
+        return (obs_dataV, obs_dataH)
 
-    def charfunc_s(self, xtr, ytr, epsilon=0.001):
+    def cfunc_s(self, xtr, ytr, epsilon=0.001):
         nsta,nsamp=num.shape(xtr)
         obs_dataH=num.zeros([nsta,nsamp])
         obs_dataH1=hilbert(xtr)

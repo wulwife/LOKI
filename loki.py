@@ -19,7 +19,6 @@ import os, sys
 import numpy as num
 import LatLongUTMconversion
 import location
-import C_STALTA
 import tt_processing
 from obspy.core   import read
 from obspy.signal import filter
@@ -47,16 +46,15 @@ class Loki:
               os.mkdir(output_path)
         return data_tree, events
 
-    def time_extractor(self, tp, ts, data_stations, db_stations):
-        stations=data_stations & db_stations
-        nsta=len(stations)
-        nxyz= num.size(tp[list(stations)[0]])
-        tp_mod=num.zeros([nxyz,nsta])
-        ts_mod=num.zeros([nxyz,nsta])
-        for i,sta in enumerate(stations)
-            tp_mod[:,i]=tp[sta]
-            ts_mod[:,i]=ts[sta]
-        return tp_mod, ts_mod
+
+
+#load waveforms
+#load Traveltimes
+#prepare data to loki format
+#process data
+
+
+
 
     def catalogue_creation(self, event, lat0, lon0, ntrial, refell=23):
         (zorig,eorig,norig)=LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
