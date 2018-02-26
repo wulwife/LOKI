@@ -2,7 +2,7 @@ from distutils.core import setup, Extension
 import numpy
 
 # define the extension module
-ps_detection = Extension('detection', sources=['ps_detection_py3_omp.c'],
+detection = Extension('detection', sources=['detection_py3_omp.c'],
                           include_dirs=[numpy.get_include()],
                           extra_compile_args=['-O3','-fopenmp'],
                           extra_link_args=['-lgomp'])
@@ -28,6 +28,6 @@ DET_STALTA = Extension('DET_STALTA', sources=['stalta_det_py3.c'],
 
 
 # run the setup
-setup(ext_modules=[ps_detection,ps1s2_detection,p_detection,tt_processing,C_STALTA, DET_STALTA])
+setup(ext_modules=[detection,p_detection,tt_processing, LOC_STALTA, DET_STALTA])
 
 # python3 installation_detector.py build_ext --inplace

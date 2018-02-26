@@ -2,15 +2,17 @@ import numpy as num
 import lokidata
 import DET_STALTA
 import LOC_STALTA
+from scipy.signal import hilbert
+
 
 class StackingFunction:
     def __init__(self, lobj, cfunc='ergpca', epsilon=0.001):
-       if cfung=='erg':
+       if cfunc=='erg':
            obs_dataV, obs_dataH=self.cfunc_erg(lobj.traces, False)
-       elif cfung=='ergpca':
+       elif cfunc=='ergpca':
            obs_dataV=self.cfunc_erg(lobj.traces)
            obs_dataH=self.cfunc_pca(lobj, epsilon)
-       elif cfung=='pcafull':
+       elif cfunc=='pcafull':
            obs_dataV, obs_dataH=self.cfunc_pcafull(lobj, epsilon)
        else:
            raise ValueError('wrong selection for characteristic function')
@@ -28,7 +30,7 @@ class StackingFunction:
            obs_dataH=(traces[0]**2)*(traces[1]**2)
            return obs_dataV, obs_dataH
 
-    def cfunc_pca(self, lobj, epsilon):
+    def cfunc_pcafull(self, lobj, epsilon):
         xtr=lobj.traces[0]; ytr=lobj.traces[1]; ztr=lobj.traces[2]
         nsta=lobj.nstation; nsamp=lobj.ns
         obs_dataH=num.zeros([nsta,nsamp]); obs_dataV=num.zeros([nsta,nsamp])
@@ -46,11 +48,11 @@ class StackingFunction:
                 obs_dataV[i,j]=(s3d[0]**2)
                 obs_dataH[i,j]=(s2d[0]**2)
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
-            obs_dataV[i,:]=obs_dataV[i,:]/num.max(obs_dataV[i,:])
+            obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
         return (obs_dataV, obs_dataH)
 
-    def cfunc_pca_full(self, traces, epsilon=0.001):
-        xtr=lobj.traces[0]; ytr=lob.traces[1]
+    def cfunc_pca(self, lobj, epsilon=0.001):
+        xtr=lobj.traces[0]; ytr=lobj.traces[1]
         nsta=lobj.nstation; nsamp=lobj.ns
         obs_dataH=num.zeros([nsta,nsamp])
         obs_dataH1=hilbert(xtr)
@@ -65,6 +67,8 @@ class StackingFunction:
                 U, s, V = num.linalg.svd(cov, full_matrices=True)
                 obs_dataH[i,j]=(s[0]**2)
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
+            plt.plot(obs_dataH[i,:])
+            plt.show()
         return obs_dataH
 
     def loc_stalta(self, nshort_p, nshort_s, slrat, thres=2):
