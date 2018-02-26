@@ -27,10 +27,10 @@ class LokiData:
         dtimes=[]
         for comp in (wobj.stream).keys():
             for sta in (wobj.stream[comp]).keys():
-                dtimes.append(wobj.stream[comp][sta][0]))
+                dtimes.append(wobj.stream[comp][sta][0])
         dtime0=dtime[0]
         for dtime in dtimes:
-            if num.abs((dtime0-dtime).total_seconds())<2*wobj.deltat
+            if num.abs((dtime0-dtime).total_seconds())<2*wobj.deltat:
                pass
             else:
                raise ValueError('Error!! All trace must have the same starting time')

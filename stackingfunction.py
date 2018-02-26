@@ -3,19 +3,34 @@ import lokidata
 import DET_STALTA
 import LOC_STALTA
 
-
 class StackingFunction:
-    def __init__(self, lobj, cfuncP='erg', cfuncS='pca'):
-        if
-          self.charfunc_erg
+    def __init__(self, lobj, cfunc='ergpca', epsilon=0.001):
+       if cfung=='erg':
+           obs_dataV, obs_dataH=self.cfunc_erg(lobj.traces, False)
+       elif cfung=='ergpca':
+           obs_dataV=self.cfunc_erg(lobj.traces)
+           obs_dataH=self.cfunc_pca(lobj, epsilon)
+       elif cfung=='pcafull':
+           obs_dataV, obs_dataH=self.cfunc_pcafull(lobj, epsilon)
+       else:
+           raise ValueError('wrong selection for characteristic function')
 
-    def cfunc_erg(self, ztr, ytr, xtr):
-        obs_dataV=(ztr**2)
-        obs_dataH=(xtr**2)*(ytr**2)
-        return (obs_dataV, obs_dataH)
+    def cfunc_single(self, traces):
+        obs_data=(traces**2)
+        return obs_data
 
-    def cfunc_ps(self, xtr, ytr, ztr, epsilon=0.001):
-        nsta,nsamp=num.shape(xtr)
+    def cfunc_erg(self, traces, ergz=True):
+        if ergz:
+           obs_dataV=(traces[2]**2)
+           return obs_dataV
+        else
+           obs_dataV=(traces[2]**2)
+           obs_dataH=(traces[0]**2)*(traces[1]**2)
+           return obs_dataV, obs_dataH
+
+    def cfunc_pca(self, lobj, epsilon):
+        xtr=lobj.traces[0]; ytr=lobj.traces[1]; ztr=lobj.traces[2]
+        nsta=lobj.nstation; nsamp=lobj.ns
         obs_dataH=num.zeros([nsta,nsamp]); obs_dataV=num.zeros([nsta,nsamp])
         obs_dataH1=hilbert(xtr); obs_dataH2=hilbert(ytr); obs_dataH3=hilbert(ztr)
         obs_dataH1C=num.conjugate(obs_dataH1); obs_dataH2C=num.conjugate(obs_dataH2); obs_dataH3C=num.conjugate(obs_dataH3)
@@ -34,8 +49,9 @@ class StackingFunction:
             obs_dataV[i,:]=obs_dataV[i,:]/num.max(obs_dataV[i,:])
         return (obs_dataV, obs_dataH)
 
-    def cfunc_s(self, xtr, ytr, epsilon=0.001):
-        nsta,nsamp=num.shape(xtr)
+    def cfunc_pca_full(self, traces, epsilon=0.001):
+        xtr=lobj.traces[0]; ytr=lob.traces[1]
+        nsta=lobj.nstation; nsamp=lobj.ns
         obs_dataH=num.zeros([nsta,nsamp])
         obs_dataH1=hilbert(xtr)
         obs_dataH2=hilbert(ytr)

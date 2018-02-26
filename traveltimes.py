@@ -204,28 +204,28 @@ class traveltimes:
                 print('Error: reading file for station' + sta)
         return t
 
-db_path='/Users/francesco/Desktop/KOREA/korea_time'
-tt0=traveltimes(db_path, 'header.hdr')
-tt1=traveltimes(db_path, 'header.hdr')
-tp0=tt0.load_traveltimes('P','layer')
-tp1=tt1.load_traveltimes('P','layer')
-tp_red0=tt0.ttdb_reduce(tp0,[35.5,129.00],[36.5,130.0])
-tp_red1=tt1.ttdb_reduce(tp1,[35.5,129.00],[36.5,130.0])
-tp_int1=tt1.interpolation(tp_red1,0.5,0.5,0.5)
-tt3=traveltimes(db_path, 'interpolated.header.hdr')
-tp3=tt3.load_traveltimes('P','interpolated')
-#tt1.save_ttdb(tp_int1,'P','interpolated')
-
-#400 350 65
-#-250.000000 -150.000000 -5.000000
-#31.88 31.94  130.84 130.92
-#for k in tp0.keys():
-#    #tp1=tp[k].reshape(400, 350, 65)
-#    tp2=tp_red0[k].reshape(tt0.nx, tt0.ny, tt0.nz)
-#    tp4=tp3[k]
-#    print(num.shape(tp4),tt3.nx*tt3.ny*tt3.nz)
-#    plt.figure()
-#    plt.imshow(tp2[:,:,0])
-#    plt.figure()
-#    plt.imshow(tp3[:,:,0])
-#    plt.show()
+# db_path='/Users/francesco/Desktop/KOREA/korea_time'
+# tt0=traveltimes(db_path, 'header.hdr')
+# tt1=traveltimes(db_path, 'header.hdr')
+# tp0=tt0.load_traveltimes('P','layer')
+# tp1=tt1.load_traveltimes('P','layer')
+# tp_red0=tt0.ttdb_reduce(tp0,[35.5,129.00],[36.5,130.0])
+# tp_red1=tt1.ttdb_reduce(tp1,[35.5,129.00],[36.5,130.0])
+# tp_int1=tt1.interpolation(tp_red1,0.5,0.5,0.5)
+# tt3=traveltimes(db_path, 'interpolated.header.hdr')
+# tp3=tt3.load_traveltimes('P','interpolated')
+# #tt1.save_ttdb(tp_int1,'P','interpolated')
+#
+# #400 350 65
+# #-250.000000 -150.000000 -5.000000
+# #31.88 31.94  130.84 130.92
+# #for k in tp0.keys():
+# #    #tp1=tp[k].reshape(400, 350, 65)
+# #    tp2=tp_red0[k].reshape(tt0.nx, tt0.ny, tt0.nz)
+# #    tp4=tp3[k]
+# #    print(num.shape(tp4),tt3.nx*tt3.ny*tt3.nz)
+# #    plt.figure()
+# #    plt.imshow(tp2[:,:,0])
+# #    plt.figure()
+# #    plt.imshow(tp3[:,:,0])
+# #    plt.show()
