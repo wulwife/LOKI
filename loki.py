@@ -26,7 +26,7 @@ from obspy.signal import filter
 from scipy.signal import hilbert
 
 
-class loki:
+class Loki:
 
     def __init__(self, data_path, output_path, db_path, hdr_filename):
         self.data_path=data_path

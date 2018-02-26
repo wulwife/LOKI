@@ -1,6 +1,6 @@
 import traveltimes
 import waveforms
-import datetime
+from datetime import datetime
 
 class LokiData:
 
