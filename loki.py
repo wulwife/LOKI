@@ -3,10 +3,13 @@ import waveforms
 from datetime import datetime
 import numpy as num
 import matplotlib.pyplot as plt
+import DET_STALTA
+import LOC_STALTA
 
 class Loki:
 
     def __init__(self, tobj, wobj, derivative=True):
+        #check input objects
         self.check_sampling_rate(wobj)
         self.check_starting_time(wobj)
         self.loki_input(wobj, tobj, derivative)
@@ -115,6 +118,8 @@ class Loki:
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
         self.obs_dataH=obs_dataH
 
+
+#locations class?
     def loc_stalta(self, nshort_p, nshort_s, slrat, thres=2):
         tshort_p=nshort_p*self.deltat; tshort_s=nshort_s*self.deltat
         tlong_p=tshort_p*slrat; tlong_s=tshort_s*slrat
@@ -124,14 +129,16 @@ class Loki:
         obs_dataS=LOC_STALTA.recursive_stalta(tshort_s, tlong_s, self.deltat, self.obs_dataH, kl_s, ks_s, thres)
         return obs_dataP, obs_dataS
 
+
+#detection class?
     def det_stalta(self, nshort_p, nshort_s, slrat, staltap0, staltas0, thres=0.):
         tshort_p=nshort_p*self.deltat; tshort_s=nshort_s*self.deltat
         tlong_p=tshort_p*slrat; tlong_s=tshort_s*slrat
-        obs_dataP=num.zeros([self.nsta,self.nsamp])
-        obs_dataS=num.zeros([self.nsta,self.nsamp])
-        for i in range(self.nsta):
-            obs_dataP[i,:],stltp0=DET_STALTA.recstalta(staltap0[i][0], staltap0[i][1], tshort_p, tlong_p, self.deltat, self.obs_dataV[i,:], thres)
-            obs_dataS[i,:],stlts0=DET_STALTA.recstalta(staltas0[i][0], staltas0[i][1], tshort_s, tlong_s, self.deltat, self.obs_dataH[i,:], thres)
+        obs_dataP=num.zeros([self.nstation,self.ns])
+        obs_dataS=num.zeros([self.nstation,self.ns])
+        for i in range(self.nstation):
+            obs_dataP[i,:],stltp0=DET_STALTA.recursive_stalta(staltap0[i][0], staltap0[i][1], tshort_p, tlong_p, self.deltat, self.obs_dataV[i,:], thres)
+            obs_dataS[i,:],stlts0=DET_STALTA.recursive_stalta(staltas0[i][0], staltas0[i][1], tshort_s, tlong_s, self.deltat, self.obs_dataH[i,:], thres)
             staltap0[i][0]=stltp0[0]; staltap0[i][1]=stltp0[1]
             staltas0[i][0]=stlts0[0]; staltas0[i][1]=stlts0[1]
         return obs_dataP, obs_dataS, staltap0, staltas0
