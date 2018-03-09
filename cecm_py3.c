@@ -94,13 +94,16 @@ PyMODINIT_FUNC PyInit_LOC_CECM(void){
 };
 
 
-int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, double obs_data_Z[nsta][nsamples], double obs_data_N[nsta][nsamples], double obs_data_E[nsta][nsamples], double cecm[nsta][nsamples], double ks, double kl, int norm){
+int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, double obs_data_Z[nsta][nsamples], double obs_data_N[nsta][nsamples], double obs_data_E[nsta][nsamples], double cecm[nsta][nsamples],double ks, double kl, int norm){
 
-    int i, j, h, sw, lw;
-    double eps, csqZ, csqE, csqN, RMSZ, RMSN, RMSE;
-    double cecm, CC_ZN, CC_ZE;
-    double prod_cumsum_ZE, prod_cumsum_ZN, Z_squarecumsum, N_squarecumsum, E_squarecumsum;
-    double win_prod_cumsum_ZE, win_prod_cumsum_ZN, win_Z_squarecumsum, win_N_squarecumsum, win_E_squarecumsum;
+    int i, j, sw, lw;
+    double eps;
+    double CC_ZN[nsamples], CC_ZE[nsamples];
+    double prod_cumsum_ZE[nsamples], prod_cumsum_ZN[nsamples];
+    double Z_squarecumsum[nsamples], N_squarecumsum[nsamples], E_squarecumsum[nsamples];
+    double win_prod_cumsum_ZE[nsamples], win_prod_cumsum_ZN[nsamples];
+    double win_Z_squarecumsum[nsamples], win_N_squarecumsum[nsamples], win_E_squarecumsum[nsamples];
+    double csqZ[nsamples], csqE[nsamples], csqN[nsamples];
 
     /* RMS window */
     lw=(int)round(tlong/dt);
@@ -112,19 +115,23 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
     /* loop over stations */
     for (i=0; i<nsta; i++){
         /* Evaluation of the RMS */
-        csqZ=obs_data_Z[i];
-        csqE=obs_data_E[i];
-        csqN=obs_data_N[i];
+        csqZ[0]=obs_data_Z[i][0];
+        csqE[0]=obs_data_E[i][0];
+        csqN[0]=obs_data_N[i][0];
+        RMSZ[0]=csqZ[0];
+        RMSE[0]=csqE[0];
+        RMSN[0]=csqN[0];
         /* RMS: cumulative sum of square power */
         for(j=1; j<nsamples; j++){
             csqZ[j]=csqZ[j-1]+obs_data_Z[i][j]*obs_data_Z[i][j];
             csqE[j]=csqE[j-1]+obs_data_E[i][j]*obs_data_E[i][j];
             csqN[j]=csqN[j-1]+obs_data_N[i][j]*obs_data_N[i][j];
+            
+            /* RMS: init (useful before lw)  */
+            RMSZ[j]=csqZ[j];
+            RMSE[j]=csqE[j];
+            RMSN[j]=csqN[j];
         }
-        /* RMS: init (useful before lw)  */
-        RMSZ=csqZ;
-        RMSE=csqE;
-        RMSN=csqN;
         /* RMS: make sliding windows */
         for(j=lw-1; j<nsamples; j++){
             RMSZ[j]=csqZ[j]-csqZ[j-lw];
@@ -145,11 +152,17 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
         }
         
         /* Evaluation of the component correlation */
-        prod_cumsum_ZE=RMSZ*RMSE;
-        prod_cumsum_ZN=RMSZ*RMSN;
-        Z_squarecumsum=RMSZ;
-        E_squarecumsum=RMSE;
-        N_squarecumsum=RMSN;
+        prod_cumsum_ZE[0]=RMSZ[0]*RMSE[0];
+        prod_cumsum_ZN[0]=RMSZ[0]*RMSN[0];
+        Z_squarecumsum[0]=RMSZ[0];
+        E_squarecumsum[0]=RMSE[0];
+        N_squarecumsum[0]=RMSN[0];
+        win_prod_cumsum_ZE[0]=prod_cumsum_ZE[0];
+        win_prod_cumsum_ZN[0]=prod_cumsum_ZN[0];
+        win_Z_squarecumsum[0]=Z_squarecumsum[0];
+        win_E_squarecumsum[0]=E_squarecumsum[0];
+        win_N_squarecumsum[0]=N_squarecumsum[0];
+        
         /* CC: cumulative sums */
         for(j=1; j<nsamples; j++){
             prod_cumsum_ZE[j]=prod_cumsum_ZE[j-1]+RMSZ[j]*RMSE[j];
@@ -157,27 +170,30 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
             Z_squarecumsum[j]=Z_squarecumsum[j-1]+RMSZ[j];
             E_squarecumsum[j]=E_squarecumsum[j-1]+RMSE[j];
             N_squarecumsum[j]=N_squarecumsum[j-1]+RMSN[j];
+            
+            /* CC: init sliding (useful before sw)  */
+            win_prod_cumsum_ZE[j]=prod_cumsum_ZE[j];
+            win_prod_cumsum_ZN[j]=prod_cumsum_ZN[j];
+            win_Z_squarecumsum[j]=Z_squarecumsum[j];
+            win_E_squarecumsum[j]=E_squarecumsum[j];
+            win_N_squarecumsum[j]=N_squarecumsum[j];
         }
-        /* CC: init sliding (useful before sw)  */
-        win_prod_cumsum_ZE=prod_cumsum_ZE;
-        win_prod_cumsum_ZN=prod_cumsum_ZN;
-        win_Z_squarecumsum=Z_squarecumsum;
-        win_E_squarecumsum=E_squarecumsum;
-        win_N_squarecumsum=N_squarecumsum;
         /* CC: make sliding windows */
         for(j=sw-1; j<nsamples; j++){
-            win_prod_cumsum_ZE[j]=win_prod_cumsum_ZE[j]-win_prod_cumsum_ZE[j-sw];
-            win_prod_cumsum_ZN[j]=win_prod_cumsum_ZN[j]-win_prod_cumsum_ZN[j-sw];
-            win_Z_squarecumsum[j]=win_Z_squarecumsum[j]-win_Z_squarecumsum[j-sw];
-            win_E_squarecumsum[j]=win_E_squarecumsum[j]-win_E_squarecumsum[j-sw];
-            win_N_squarecumsum[j]=win_N_squarecumsum[j]-win_N_squarecumsum[j-sw];
+            win_prod_cumsum_ZE[j]=prod_cumsum_ZE[j]-prod_cumsum_ZE[j-sw];
+            win_prod_cumsum_ZN[j]=prod_cumsum_ZN[j]-prod_cumsum_ZN[j-sw];
+            win_Z_squarecumsum[j]=Z_squarecumsum[j]-Z_squarecumsum[j-sw];
+            win_E_squarecumsum[j]=E_squarecumsum[j]-E_squarecumsum[j-sw];
+            win_N_squarecumsum[j]=N_squarecumsum[j]-N_squarecumsum[j-sw];
         }
         /* CC: finishes */
-        CC_ZN=win_prod_cumsum_ZN/sqrt(win_Z_squarecumsum*win_N_squarecumsum);
-        CC_ZE=win_prod_cumsum_ZE/sqrt(win_Z_squarecumsum*win_E_squarecumsum);
-        
-        /* Evaluation of the CECM */
-        cecm[i]=CC_ZN*CC_ZE;
+        for(j=0; j<nsamples; j++){
+            CC_ZN[j]=win_prod_cumsum_ZN[j]/sqrt(win_Z_squarecumsum[j]*win_N_squarecumsum[j]);
+            CC_ZE[j]=win_prod_cumsum_ZE[j]/sqrt(win_Z_squarecumsum[j]*win_E_squarecumsum[j]);
+            
+            /* Evaluation of the CECM */
+            cecm[i][j]=CC_ZN[j]*CC_ZE[j];
+        }
     }
     return 0;
 }
