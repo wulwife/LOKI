@@ -192,7 +192,7 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
             CC_ZE[j]=win_prod_cumsum_ZE[j]/sqrt(win_Z_squarecumsum[j]*win_E_squarecumsum[j]);
             
             /* Evaluation of the CECM */
-            cecm[i][j]=CC_ZN[j]*CC_ZE[j];
+            cecm[i][j]=1.0-(CC_ZN[j]*CC_ZE[j]);
         }
     }
     return 0;
