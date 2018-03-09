@@ -112,9 +112,9 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
     /* loop over stations */
     for (i=0; i<nsta; i++){
         /* Evaluation of the RMS */
-        csqZ[0]=obs_data_Z[i][0];
-        csqE[0]=obs_data_E[i][0];
-        csqN[0]=obs_data_N[i][0];
+        csqZ=obs_data_Z[i];
+        csqE=obs_data_E[i];
+        csqN=obs_data_N[i];
         /* RMS: cumulative sum of square power */
         for(j=1; j<nsamples; j++){
             csqZ[j]=csqZ[j-1]+obs_data_Z[i][j]*obs_data_Z[i][j];
@@ -145,11 +145,11 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
         }
         
         /* Evaluation of the component correlation */
-        prod_cumsum_ZE[0]=RMSZ[0]*RMSE[0];
-        prod_cumsum_ZN[0]=RMSZ[0]*RMSN[0];
-        Z_squarecumsum[0]=RMSZ[0];
-        E_squarecumsum[0]=RMSE[0];
-        N_squarecumsum[0]=RMSN[0];
+        prod_cumsum_ZE=RMSZ*RMSE;
+        prod_cumsum_ZN=RMSZ*RMSN;
+        Z_squarecumsum=RMSZ;
+        E_squarecumsum=RMSE;
+        N_squarecumsum=RMSN;
         /* CC: cumulative sums */
         for(j=1; j<nsamples; j++){
             prod_cumsum_ZE[j]=prod_cumsum_ZE[j-1]+RMSZ[j]*RMSE[j];
@@ -173,14 +173,11 @@ int reccecm(double tshort, double tlong, double dt, int nsamples, int nsta, doub
             win_N_squarecumsum[j]=win_N_squarecumsum[j]-win_N_squarecumsum[j-sw];
         }
         /* CC: finishes */
-        for(j=0; j<nsamples; j++){
-            CC_ZN[j]=win_prod_cumsum_ZN[j]/sqrt(win_Z_squarecumsum[j]*win_N_squarecumsum[j]);
-            CC_ZE[j]=win_prod_cumsum_ZE[j]/sqrt(win_Z_squarecumsum[j]*win_E_squarecumsum[j]);
-        }
+        CC_ZN=win_prod_cumsum_ZN/sqrt(win_Z_squarecumsum*win_N_squarecumsum);
+        CC_ZE=win_prod_cumsum_ZE/sqrt(win_Z_squarecumsum*win_E_squarecumsum);
+        
         /* Evaluation of the CECM */
         cecm[i]=CC_ZN*CC_ZE;
     }
-
-
     return 0;
 }
