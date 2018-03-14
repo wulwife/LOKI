@@ -1,15 +1,24 @@
-import waveforms
-import traveltimes
 import loki
 import numpy as num
 
-tt='/Users/francesco/Desktop/KOREA/korea_time/korea_herr'
-ev='/Users/francesco/Desktop/KOREA/2016-09-12-mww54-south-korea'
+db_path='/Users/francesco/Desktop/KOREA/korea_time/korea_herr'
+data_path='/Users/francesco/Desktop/KOREA/2016-09-12-mww54-south-korea'
+output_path='/Users/francesco/Desktop/test'
+hdr_filename='header.hdr'
+inputs={}
+inputs['tshortp_min']=0.1
+inputs['tshortp_max']=0.2
+inputs['tshorts_min']=0.2
+inputs['tshorts_max']=0.4
+inputs['slrat']=2
+inputs['npr']=2
+inputs['ntrial']=1
+inputs['derivative']=True
+inputs['model']='layer'
+precision='single'
+comp=['E','N','Z']
+extension='*.SAC'
 
-t1=traveltimes.Traveltimes(tt,'header.hdr')
-w1=waveforms.Waveforms(ev,extension='*.SAC', comps=['E','N','Z'])
-l1=loki.Loki(t1,w1)
-l1.cfunc_erg(False)
-nshort_p=0.1; nshort_s=0.2; slrat=2.0
-staltap0=[1.0,1.0]; staltas0=[1.0,1.0]
-l1.det_stalta(nshort_p, nshort_s, slrat, staltap0, staltas0, 0.)
+
+l1=loki.Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
+l1.location(extension, comp, precision, **inputs)

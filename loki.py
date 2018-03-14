@@ -2,6 +2,10 @@ import numpy as num
 import traveltimes
 import waveforms
 import stacktraces
+import tt_processing
+import LatLongUTMconversion
+import location
+import os
 
 class Loki:
     """docstring for Loki"""
@@ -47,25 +51,27 @@ class Loki:
 
     def location(self, extension='*', comp=['E','N','Z'], precision='single', **inputs):
         tshortp_min=inputs['tshortp_min']; tshortp_max=inputs['tshortp_max'];
-        tshorts_min=inputs['tshorts_min']; tshortp_max=inputs['tshorts_max'];
+        tshorts_min=inputs['tshorts_min']; tshorts_max=inputs['tshorts_max'];
         slrat=inputs['slrat']
         npr=inputs['npr']
         ntrial=inputs['ntrial']
         derivative=inputs['derivative']
+        model=inputs['model']
         tshortp=num.linspace(tshortp_min,tshortp_max,ntrial)
         tshorts=num.linspace(tshorts_min,tshorts_max,ntrial)
 
 
-        tobj=traveltimes(self.db_path, self.hdr_filename)
-        tp=tobj.load_traveltimes('P', precision)
-        ts=tobj.load_traveltimes('S', precision)
+        tobj=traveltimes.Traveltimes(self.db_path, self.hdr_filename)
+        tp=tobj.load_traveltimes('P', model, precision)
+        ts=tobj.load_traveltimes('S', model, precision)
 
 
         for event_path in self.data_tree:
 
-            wobj=waveforms(event_path, extension, comp)
-            sobj=stacktraces(tobj, wobj, derivative=True)
+            wobj=waveforms.Waveforms(event_path, extension, comp)
+            sobj=stacktraces.Stacktraces(tobj, wobj, derivative=True)
             event=sobj.evid
+            sobj.cfunc_erg(ergz=False)
 
 
             print('accessing to the event folder: ', event_path, event)
@@ -76,7 +82,7 @@ class Loki:
 
 
             tp_mod, ts_mod=sobj.time_extractor(tp, ts)
-            tp_mod, ts_mod=tt_processing.tt_f2i(loc.deltat,tp_mod,ts_mod, npr)
+            tp_mod, ts_mod=tt_processing.tt_f2i(sobj.deltat,tp_mod,ts_mod, npr)
 
 
             for i in range(ntrial):
