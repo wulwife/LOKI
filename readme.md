@@ -40,7 +40,7 @@ Geophysical Journal International,
 https://doi.org/10.1093/gji/ggy019
 
 
-Copyright(C) 2018 ETH-Zurich, Swiss Seismological Service, Zurich, Switzerland
+Copyright(C) 2013 Francesco Grigoli
 
 Author: Francesco Grigoli
 
