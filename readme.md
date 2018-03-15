@@ -19,24 +19,25 @@ Grigoli et al. 2013,
 Automated seismic event location via traveltime stacking:
 An application to mining induced seismicity,
 Seismological Research Letters,
-Doi:10.1785/0220120191
+https://doi.org/10.1785/0220120191
+
 
 Grigoli et al 2014,
 Automated seismic event location by waveform coherence analysis,
 Geophysical Journal international,
-Doi:10.1093/gji/ggt477
+https://doi.org/10.1093/gji/ggt477
 
 Grigoli et al. 2016,
 Automated microseismic event location using Master-Event Waveform Stacking,
 Scientific Reports,
-Doi:10.1038/srep25744
+https://doi.org/10.1038/srep25744
 
 For detection:
 
 Grigoli et al. 2018,
 Pick-and waveform-based techniques for real-time detection of induced seismicity,
 Geophysical Journal International,
-Doi:10.1093/gji/ggy019
+https://doi.org/10.1093/gji/ggy019
 
 
 Copyright(C) 2018 ETH-Zurich, Swiss Seismological Service, Zurich, Switzerland
