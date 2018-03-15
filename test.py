@@ -4,7 +4,7 @@ import numpy as num
 db_path='/Users/francesco/Desktop/KOREA/korea_time/korea_herr'
 data_path='/Users/francesco/Desktop/KOREA/2016-09-12-mww54-south-korea'
 output_path='/Users/francesco/Desktop/test'
-hdr_filename='header.hdr'
+hdr_filename='interpolated.header.hdr'
 inputs={}
 inputs['tshortp_min']=0.1
 inputs['tshortp_max']=0.2
@@ -14,7 +14,7 @@ inputs['slrat']=2
 inputs['npr']=2
 inputs['ntrial']=1
 inputs['derivative']=True
-inputs['model']='layer'
+inputs['model']='interpolated'
 precision='single'
 comp=['E','N','Z']
 extension='*.SAC'

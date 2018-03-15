@@ -6,6 +6,7 @@ import tt_processing
 import LatLongUTMconversion
 import location
 import os
+import matplotlib.pyplot as plt
 
 class Loki:
     """docstring for Loki"""
@@ -93,16 +94,15 @@ class Loki:
                 obs_dataP, obs_dataS=sobj.loc_stalta(nshort_p, nshort_s, slrat, thres=2)
                 corrmatrix=location.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 cmax=num.max(corrmatrix)
-                corrmatrix=num.reshape(corrmatrix,(traveldb.nx,traveldb.ny,traveldb.nz))
-                (ixloc,iyloc,izloc)=num.unravel_index(num.argmax(corrmatrix),(traveldb.nx,traveldb.ny,traveldb.nz))
-                #xloc=ixloc*traveldb.dx; yloc=iyloc*traveldb.dy; zloc=izloc*traveldb.dz
-                xloc=traveldb.x[ixloc]; yloc=traveldb.y[iyloc]; zloc=traveldb.x[izloc]
+                corrmatrix=num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
+                (ixloc,iyloc,izloc)=num.unravel_index(num.argmax(corrmatrix),(tobj.nx,tobj.ny,tobj.nz))
+                xloc=tobj.x[ixloc]; yloc=tobj.y[iyloc]; zloc=tobj.x[izloc]
                 out_file = open(self.output_path+'/'+event+'/'+event+'.loc','a')
-                out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort)+' '+str(nlong)+'\n')
+                out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 out_file.close()
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(ntrial),corrmatrix)
-                self.coherence_plot(self.output_path+'/'+event, corrmatrix, traveldb.x, traveldb.y, traveldb.z, i)
-            self.catalogue_creation(event, traveldb.lat0, traveldb.lon0, ntrial)
+                self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
+            self.catalogue_creation(event, tobj.lat0, tobj.lon0, ntrial)
         print('Ho finito!!!')
 
 
