@@ -18,7 +18,7 @@ inputs['model']='interpolated'
 precision='single'
 comp=['E','N','Z']
 extension='*.SAC'
-
+#test
 
 l1=loki.Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
 l1.location(extension, comp, precision, **inputs)
