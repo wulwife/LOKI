@@ -1,5 +1,14 @@
+### LOKI
+
 LOKI is a code that performs earthquake detection and location
 using waveform coherence analysis (waveform stacking).
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version. You should have received a copy of
+the GNU General Public License along with this program.
+If not, see <http://www.gnu.org/licenses/>.
 
 Please cite the following articles in documents showing
 outputs of LOKI:
@@ -35,7 +44,7 @@ Copyright(C) 2018 ETH-Zurich, Swiss Seismological Service, Zurich, Switzerland
 Author: Francesco Grigoli
 
 Author contact details:
-<fsco.grigoli@gmail.com>
+<fsco.grigoli@gmail.com> or
 <francesco.grigoli@sed.ethz.ch>
 
 
@@ -43,10 +52,3 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version. You should have received a copy of
-the GNU General Public License along with this program.
-If not, see <http://www.gnu.org/licenses/>.
