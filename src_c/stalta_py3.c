@@ -144,7 +144,7 @@ int recstalta(double tshort, double tlong, double dt, int nsamples, int nsta, do
           stltmax=max(stltmax,stalta[i][j]);
        }
 
-       if (norm==1){
+       if (norm!=0){
           for(j=0; j<nsamples; j++){
               stalta[i][j]=stalta[i][j]/stltmax;
           }

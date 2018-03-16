@@ -8,11 +8,21 @@ import LOC_STALTA
 
 class Stacktraces:
 
-    def __init__(self, tobj, wobj, derivative=True):
+    def __init__(self, tobj, wobj, **inputs):
         #check input objects tobj=traveltime_object wobj=Raw_waveform_object
+        if 'derivative' in inputs.keys():
+            derivative=inputs['derivative']
+        if 'vfunc' in inputs.keys():
+            vfunc=inputs['vfunc']
+        if 'hfunc' in inputs.keys():
+            hfunc=inputs['hfunc']
+        if 'epsilon' in inputs.keys():
+            epsilon=inputs['epsilon']
         self.check_sampling_rate(wobj)
         self.check_starting_time(wobj)
         self.loki_input(wobj, tobj, derivative)
+        self.characteristic_function(vfunc,hfunc, epsilon)
+
 
     def check_sampling_rate(self,wobj):
         intsamp=1E6
@@ -27,6 +37,7 @@ class Stacktraces:
         else:
            raise ValueError('Error!! All trace must have the same sampling rate')
 
+
     def check_starting_time(self,wobj):
         intsamp=1E6
         dtimes=[]
@@ -39,7 +50,8 @@ class Stacktraces:
         self.dtime_max=max(dtimes)
         self.evid=(self.dtime_max).isoformat()
 
-    def loki_input(self, wobj, tobj, derivative):
+
+    def loki_input(self, wobj, tobj, derivative=True):
         self.comp=tuple((wobj.stream).keys())
         if len(self.comp)==3:
             self.xtr=self.select_data(self.comp[0], wobj, tobj.db_stations, derivative)
@@ -49,6 +61,7 @@ class Stacktraces:
             self.ztr=self.select_data(comp, wobj.data_stations, db_stations, derivative)
         else:
             raise ValueError('Traces must have 1 or 3 components!')
+
 
     def select_data(self, comp, wobj, db_stations, derivative):
         self.stations=tuple(wobj.data_stations & db_stations)
@@ -75,14 +88,29 @@ class Stacktraces:
             ts_mod[:,i]=ts[sta]
         return (tp_mod, ts_mod)
 
-    def cfunc_erg(self, ergz=True):
+
+    def characteristic_function(self, vfunc='erg', hfunc='pca', epsilon=0.001):
+        if vfunc='erg' and hfunc='pca':
+           self.cfunc_erg(True)
+           self.cfunc_pca(epsilon)
+        elif vfunc='pca' and hfunc='pca':
+           self.cfunc_pcafull(epsilon)
+        elif vfunc='erg' and hfunc='erg':
+           self.cfunc_erg(False)
+        else:
+           print('wrong characterstic functions, energy used as default')
+           self.cfunc_erg(False)
+
+
+    def cfunc_erg(self, ergz):
         if ergz:
            self.obs_dataV=(self.ztr**2)
         else:
            self.obs_dataV=(self.ztr**2)
            self.obs_dataH=(self.xtr**2)*(self.ytr**2)
 
-    def cfunc_pcafull(self, epsilon=0.001):
+
+    def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])
         obs_dataH1=hilbert(self.xtr); obs_dataH2=hilbert(self.ytr); obs_dataH3=hilbert(self.ztr)
         obs_dataH1C=num.conjugate(obs_dataH1); obs_dataH2C=num.conjugate(obs_dataH2); obs_dataH3C=num.conjugate(obs_dataH3)
@@ -102,7 +130,8 @@ class Stacktraces:
         self.obs_dataH=obs_dataH
         self.obs_dataV=obs_dataV
 
-    def cfunc_pca(self, epsilon=0.001):
+
+    def cfunc_pca(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns])
         obs_dataH1=hilbert(self.xtr)
         obs_dataH2=hilbert(self.ytr)
@@ -118,14 +147,16 @@ class Stacktraces:
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
         self.obs_dataH=obs_dataH
 
-    def loc_stalta(self, nshort_p, nshort_s, slrat, thres=2):
+
+    def loc_stalta(self, nshort_p, nshort_s, slrat, norm=1):
         tshort_p=nshort_p*self.deltat; tshort_s=nshort_s*self.deltat
         tlong_p=tshort_p*slrat; tlong_s=tshort_s*slrat
         ks_p=self.deltat/tshort_p; kl_p=self.deltat/tlong_p;
         ks_s=self.deltat/tshort_s; kl_s=self.deltat/tlong_s;
-        obs_dataP=LOC_STALTA.recursive_stalta(tshort_p, tlong_p, self.deltat, self.obs_dataV, kl_p, ks_p, thres)
-        obs_dataS=LOC_STALTA.recursive_stalta(tshort_s, tlong_s, self.deltat, self.obs_dataH, kl_s, ks_s, thres)
+        obs_dataP=LOC_STALTA.recursive_stalta(tshort_p, tlong_p, self.deltat, self.obs_dataV, kl_p, ks_p, norm)
+        obs_dataS=LOC_STALTA.recursive_stalta(tshort_s, tlong_s, self.deltat, self.obs_dataH, kl_s, ks_s, norm)
         return obs_dataP, obs_dataS
+
 
     def det_stalta(self, nshort_p, nshort_s, slrat, staltap0, staltas0, thres=0.):
         tshort_p=nshort_p*self.deltat; tshort_s=nshort_s*self.deltat

@@ -58,6 +58,10 @@ class Loki:
         ntrial=inputs['ntrial']
         derivative=inputs['derivative']
         model=inputs['model']
+        vfunc=inputs['vfunc']
+        hfunc=inputs['hfunc']
+        epsilon=inputs['epsilon']
+
         tshortp=num.linspace(tshortp_min,tshortp_max,ntrial)
         tshorts=num.linspace(tshorts_min,tshorts_max,ntrial)
 
@@ -70,7 +74,7 @@ class Loki:
         for event_path in self.data_tree:
 
             wobj=waveforms.Waveforms(event_path, extension, comp)
-            sobj=stacktraces.Stacktraces(tobj, wobj, derivative=True)
+            sobj=stacktraces.Stacktraces(tobj, wobj, **inputs)
             event=sobj.evid
             sobj.cfunc_erg(ergz=False)
 
