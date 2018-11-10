@@ -17,7 +17,7 @@
 int tt_f2i(double dt, long int nxyz, long int nsta, double tp[nxyz][nsta], double ts[nxyz][nsta], int itp[nxyz][nsta], int its[nxyz][nsta], int nproc);
 /* Python wrapper of the C function stacking */
 
-static char module_docstring[]="Module to convert traveltimes form float to integers";
+static char module_docstring[]="Module for computing of the traveltime processing";
 static char tt_f2i_docstring[]="traveltime processing";
 
 
@@ -62,8 +62,8 @@ static PyObject *py_tt_f2i(PyObject *self, PyObject *args){
    }
 
    /* find the dimension of tp */
-   nxyz=dims[0]=(long int) PyArray_DIM(tp, 0);
-   nsta=dims[1]=(long int) PyArray_DIM(tp, 1);
+   nsta=dims[0]=(long int) PyArray_DIM(tp, 0);
+   nxyz=dims[1]=(long int) PyArray_DIM(tp, 1);
 
    itp=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_INT);
    its=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_INT);
@@ -73,11 +73,15 @@ static PyObject *py_tt_f2i(PyObject *self, PyObject *args){
       PyErr_SetString(PyExc_RuntimeError, "running tt_f2i failed.");
       return NULL;
    }
+   PyObject *ittdb=Py_BuildValue("OO", itp, its);
 
+   Py_DECREF(itp);
+   Py_DECREF(its);
+   return ittdb;
 
-   Py_INCREF(itp);
-   Py_INCREF(its);
-   return Py_BuildValue("OO", itp, its);
+   //Py_INCREF(itp);
+   //Py_INCREF(its);
+   //return Py_BuildValue("OO", itp, its);
    //PyObject *tupleresult = PyTuple_New(2);
    //PyTuple_SetItem(tupleresult, 0, PyArray_Return(itp));
    //PyTuple_SetItem(tupleresult, 1, PyArray_Return(its));
