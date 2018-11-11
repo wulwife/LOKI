@@ -79,9 +79,10 @@ class Stacktraces:
                tr[i,:]=1.
         return tr
 
+
     def time_extractor(self, tp, ts):
         nxyz= num.size(tp[self.stations[0]])
-        tp_mod=num.zeros([nxyz,self.nstation]) #optimize with pointers to tp[sta] and ts[sta]
+        tp_mod=num.zeros([nxyz,self.nstation])
         ts_mod=num.zeros([nxyz,self.nstation])
         for i,sta in enumerate(self.stations):
             tp_mod[:,i]=tp[sta]
@@ -97,6 +98,8 @@ class Stacktraces:
            self.cfunc_pcafull(epsilon)
         elif vfunc='erg' and hfunc='erg':
            self.cfunc_erg(False)
+        elif vfunc='erg' and hfunc='null':
+           self.cfunc_erg(True)
         else:
            print('wrong characterstic functions, energy used as default')
            self.cfunc_erg(False)

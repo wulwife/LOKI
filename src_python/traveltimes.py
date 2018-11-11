@@ -31,7 +31,6 @@ class Traveltimes:
         self.hdr_filename = hdr_filename
         self.load_header()
 
-
     def load_header(self):
 
         f = open(os.path.join(self.db_path, self.hdr_filename))
@@ -62,8 +61,6 @@ class Traveltimes:
         self.db_stations=set(db_stalist)
         self.stations_coordinates=stations_coordinates
 
-
-
     def load_traveltimes(self, phase, label='layer', precision='single'):
         t={}
         for sta in self.db_stations:
@@ -80,7 +77,6 @@ class Traveltimes:
                 print('Error: precision must be set to "single" or "double"!!!')
                 sys.exit()
         return t
-
 
     def ttdb_reduce(self,tt,l_lim,u_lim,zlim=[]):
         (zorig,x_orig,y_orig)=ll.LLtoUTM(23, self.lat0, self.lon0)
