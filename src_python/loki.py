@@ -24,7 +24,6 @@ class Loki:
             raise ValueError('mode must be "detector" or "locator"')
 
 
-# encapsulate data_struct in a class data_tree
     def location_data_struct(self, data_path, output_path):
         events=[]
         data_tree=[]
@@ -37,6 +36,7 @@ class Loki:
               os.mkdir(output_path)
         return data_tree, events
 
+
     def detection_data_struct(self, data_path, output_path):
         events=[]
         data_tree=[]
@@ -44,11 +44,10 @@ class Loki:
            if not dirs:
               data_tree.append(root)
               events.append(root.split('/')[-1])
-        for event in events:
-           if not os.path.isdir(output_path):
+        if not os.path.isdir(output_path):
               os.mkdir(output_path)
         return data_tree, events
-#############
+
 
     def location(self, extension='*', comp=['E','N','Z'], precision='single', **inputs):
         tshortp_min=inputs['tshortp_min']; tshortp_max=inputs['tshortp_max'];
@@ -79,7 +78,7 @@ class Loki:
             sobj.cfunc_erg(ergz=False)
 
 
-            print('accessing to the event folder: ', event_path, event)
+            print('Processing to the event folder: ', event_path, event)
             if os.path.isdir(self.output_path+'/'+event):
                 continue
             else:
@@ -104,10 +103,10 @@ class Loki:
                 out_file = open(self.output_path+'/'+event+'/'+event+'.loc','a')
                 out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 out_file.close()
-                num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(ntrial),corrmatrix)
+                num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
             self.catalogue_creation(event, tobj.lat0, tobj.lon0, ntrial)
-        print('Ho finito!!!')
+        print('Location process completed!!!')
 
 
     def catalogue_creation(self, event, lat0, lon0, ntrial, refell=23):
@@ -133,8 +132,7 @@ class Loki:
         f.close()
 
 
-
-    def coherence_plot(self, event_path, corrmatrix, xax, yax, zax, ntrial, normalization=False):
+    def coherence_plot(self, event_path, corrmatrix, xax, yax, zax, itrial, normalization=False):
         nx,ny,nz=num.shape(corrmatrix)
         CXY=num.zeros([ny, nx])
         for i in range(ny):
@@ -144,8 +142,7 @@ class Loki:
         CXZ=num.zeros([nz, nx])
         for i in range(nz):
             for j in range(nx):
-			             CXZ[i,j]=num.max(corrmatrix[j,:,i])
-
+			    CXZ[i,j]=num.max(corrmatrix[j,:,i])
 
         CYZ=num.zeros([nz, ny])
         for i in range(nz):
@@ -167,7 +164,7 @@ class Loki:
         ax.set_ylabel('Y (km)')
         cbar = plt.colorbar(cs)
         plt.axes().set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_xy'+str(ntrial)+'.eps')
+        plt.savefig(event_path+'/'+'Coherence_matrix_xy'+str(itrial)+'.eps')
 
 
         fig = plt.figure()
@@ -180,7 +177,7 @@ class Loki:
         cbar = plt.colorbar(cs)
         ax.invert_yaxis()
         plt.axes().set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_xz'+str(ntrial)+'.eps')
+        plt.savefig(event_path+'/'+'Coherence_matrix_xz'+str(itrial)+'.eps')
 
 
         fig = plt.figure()
@@ -193,5 +190,5 @@ class Loki:
         ax.invert_yaxis()
         cbar = plt.colorbar(cs)
         plt.axes().set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_yz'+str(ntrial)+'.eps')
+        plt.savefig(event_path+'/'+'Coherence_matrix_yz'+str(itrial)+'.eps')
         plt.close("all")
