@@ -3,6 +3,7 @@ import waveforms
 from datetime import datetime
 import numpy as num
 import matplotlib.pyplot as plt
+from scipy.signal import hilbert
 import DET_STALTA
 import LOC_STALTA
 
@@ -91,14 +92,14 @@ class Stacktraces:
 
 
     def characteristic_function(self, vfunc='erg', hfunc='pca', epsilon=0.001):
-        if vfunc='erg' and hfunc='pca':
+        if vfunc=='erg' and hfunc=='pca':
            self.cfunc_erg(True)
            self.cfunc_pca(epsilon)
-        elif vfunc='pca' and hfunc='pca':
+        elif vfunc=='pca' and hfunc=='pca':
            self.cfunc_pcafull(epsilon)
-        elif vfunc='erg' and hfunc='erg':
+        elif vfunc=='erg' and hfunc=='erg':
            self.cfunc_erg(False)
-        elif vfunc='erg' and hfunc='null':
+        elif vfunc=='erg' and hfunc=='null':
            self.cfunc_erg(True)
         else:
            print('wrong characterstic functions, energy used as default')

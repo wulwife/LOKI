@@ -1,8 +1,8 @@
-import .src_python.loki
+import loki
 import numpy as num
 
-db_path='/Users/francesco/Data/KOREA/korea_time/korea_herr'
-data_path='/Users/francesco/Data/KOREA/2016-09-12-mww54-south-korea'
+db_path='/Volumes/FRANCESCO/KOREA/korea_time/korea_herr'
+data_path='/Volumes/FRANCESCO/KOREA/2016-09-12-mww54-south-korea'
 output_path='/Users/francesco/Desktop/test'
 hdr_filename='interpolated.header.hdr'
 inputs={}
@@ -14,9 +14,10 @@ inputs['slrat']=2
 inputs['npr']=2
 inputs['ntrial']=1
 inputs['derivative']=True
+inputs['model']='interpolated'
 inputs['vfunc']='erg'
 inputs['hfunc']='pca'
-inputs['model']='interpolated'
+inputs['epsilon']=0.001
 precision='single'
 comp=['E','N','Z']
 extension='*.SAC'

@@ -94,7 +94,7 @@ class Loki:
                 nshort_s=int(tshorts[i]//sobj.deltat)
                 nlong_s=int(nshort_p*slrat)
                 nlong_s=int(nshort_s*slrat)
-                obs_dataP, obs_dataS=sobj.loc_stalta(nshort_p, nshort_s, slrat, thres=2)
+                obs_dataP, obs_dataS=sobj.loc_stalta(nshort_p, nshort_s, slrat,norm=1)
                 corrmatrix=location.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 cmax=num.max(corrmatrix)
                 corrmatrix=num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
