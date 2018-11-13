@@ -55,8 +55,6 @@ class Traveltimes:
             db_stalist.append(toks[0])
             if len(toks)>1:
                 stations_coordinates[toks[0]]=[eval(toks[1]), eval(toks[2]), eval(toks[3])]
-            else:
-                print('Missing coordinates for the station : '+ toks[0]+' \n')
 
         self.db_stations=set(db_stalist)
         self.stations_coordinates=stations_coordinates

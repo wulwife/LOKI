@@ -12,7 +12,6 @@ p_detection = Extension('p_detection', sources=['p_detection_py3_omp.c'],
                           extra_compile_args=['-O3','-fopenmp'],
                           extra_link_args=['-lgomp'])
 
-
 tt_processing = Extension('tt_processing', sources=['tt_processing_py3.c'],
                           include_dirs=[numpy.get_include()],
                           extra_compile_args=['-O3','-fopenmp'],
@@ -27,7 +26,7 @@ DET_STALTA = Extension('DET_STALTA', sources=['stalta_det_py3.c'],
                           extra_compile_args=['-O3'])
 
 
-# run the setup
+# run the setup python3 intallation.py install
 setup(ext_modules=[detection,p_detection,tt_processing, LOC_STALTA, DET_STALTA])
 
 # python3 installation_detector.py build_ext --inplace

@@ -41,7 +41,6 @@ https://doi.org/10.1093/gji/ggy019
 
 
 Copyright(C) 2013 Francesco Grigoli
-
 Author: Francesco Grigoli
 
 Author contact details:

@@ -142,7 +142,7 @@ class Loki:
         CXZ=num.zeros([nz, nx])
         for i in range(nz):
             for j in range(nx):
-			    CXZ[i,j]=num.max(corrmatrix[j,:,i])
+                CXZ[i,j]=num.max(corrmatrix[j,:,i])
 
         CYZ=num.zeros([nz, ny])
         for i in range(nz):

@@ -7,39 +7,11 @@ _rad2deg = 180.0 / pi
 _EquatorialRadius = 6378137 #equatorial radius in wgs84
 _eccentricitySquared = 0.00669438 #square of eccentricity in wgs84
 
-_ellipsoid = [
-#  id, Ellipsoid name, Equatorial Radius, square of eccentricity	
-# first once is a placeholder only, To allow array indices to match id numbers
-	[ -1, "Placeholder", 0, 0],
-	[ 1, "Airy", 6377563, 0.00667054],
-	[ 2, "Australian National", 6378160, 0.006694542],
-	[ 3, "Bessel 1841", 6377397, 0.006674372],
-	[ 4, "Bessel 1841 (Nambia] ", 6377484, 0.006674372],
-	[ 5, "Clarke 1866", 6378206, 0.006768658],
-	[ 6, "Clarke 1880", 6378249, 0.006803511],
-	[ 7, "Everest", 6377276, 0.006637847],
-	[ 8, "Fischer 1960 (Mercury] ", 6378166, 0.006693422],
-	[ 9, "Fischer 1968", 6378150, 0.006693422],
-	[ 10, "GRS 1967", 6378160, 0.006694605],
-	[ 11, "GRS 1980", 6378137, 0.00669438],
-	[ 12, "Helmert 1906", 6378200, 0.006693422],
-	[ 13, "Hough", 6378270, 0.00672267],
-	[ 14, "International", 6378388, 0.00672267],
-	[ 15, "Krassovsky", 6378245, 0.006693422],
-	[ 16, "Modified Airy", 6377340, 0.00667054],
-	[ 17, "Modified Everest", 6377304, 0.006637847],
-	[ 18, "Modified Fischer 1960", 6378155, 0.006693422],
-	[ 19, "South American 1969", 6378160, 0.006694542],
-	[ 20, "WGS 60", 6378165, 0.006693422],
-	[ 21, "WGS 66", 6378145, 0.006694542],
-	[ 22, "WGS-72", 6378135, 0.006694318],
-	[ 23, "WGS-84", 6378137, 0.00669438]
-]
 
 
 def LLtoUTM(Lat, Long):
 """converts lat/long to UTM coords.
-East Longitudes are positive, West longitudes are negative. 
+East Longitudes are positive, West longitudes are negative.
 North latitudes are positive, South latitudes are negative
 Lat and Long are in decimal degrees"""
 
@@ -69,13 +41,13 @@ Lat and Long are in decimal degrees"""
     M = a*((1
             - eccSquared/4
             - 3*eccSquared*eccSquared/64
-            - 5*eccSquared*eccSquared*eccSquared/256)*LatRad 
+            - 5*eccSquared*eccSquared*eccSquared/256)*LatRad
            - (3*eccSquared/8
               + 3*eccSquared*eccSquared/32
               + 45*eccSquared*eccSquared*eccSquared/1024)*sin(2*LatRad)
-           + (15*eccSquared*eccSquared/256 + 45*eccSquared*eccSquared*eccSquared/1024)*sin(4*LatRad) 
+           + (15*eccSquared*eccSquared/256 + 45*eccSquared*eccSquared*eccSquared/1024)*sin(4*LatRad)
            - (35*eccSquared*eccSquared*eccSquared/3072)*sin(6*LatRad))
-    
+
     UTMEasting = (k0*N*(A+(1-T+C)*A*A*A/6
                         + (5-18*T+T*T+72*C-58*eccPrimeSquared)*A*A*A*A*A/120)
                   + 500000.0)
@@ -94,58 +66,58 @@ Lat and Long are in decimal degrees"""
 
 
 def zone_identification(Lat, Long):
-    
+
     letters=['C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Z']
     lats=num.arange(-84,96,12)
     for l in lats:
         if Lat<l:
-             #da moficicare 
+             #da moficicare
 
     zone_number=None
-    if Lat <= 84 and Lat >= 72: 
+    if Lat <= 84 and Lat >= 72:
        zone_letter='X'
        if   Long >= 0  and Long <  9: zone_number = 31
        elif Long >= 9  and Long < 21: zone_number = 33
        elif Long >= 21 and Long < 33: zone_number = 35
        elif Long >= 33 and Long < 42: zone_number = 37
-    elif Lat < 72 and Lat >= 64: 
+    elif Lat < 72 and Lat >= 64:
        zone_letter='W'
     elif Lat < 64 and Lat >= 56:
        zone_letter='V'
        if Long > 3 and Long < 12: zone_number = 32
-    elif Lat < 56 and Lat >= 48: 
+    elif Lat < 56 and Lat >= 48:
        zone_letter='U'
-    elif Lat < 48 and Lat >= 40: 
+    elif Lat < 48 and Lat >= 40:
        zone_letter='T'
-    elif Lat < 40 and Lat >= 32: 
+    elif Lat < 40 and Lat >= 32:
        zone_letter='S'
-    elif Lat < 32 and Lat >= 24: 
+    elif Lat < 32 and Lat >= 24:
        zone_letter='R'
-    elif Lat < 24 and Lat >= 16: 
+    elif Lat < 24 and Lat >= 16:
        zone_letter='Q'
-    elif Lat < 16 and Lat >= 8: 
+    elif Lat < 16 and Lat >= 8:
        zone_letter='P'
-    elif Lat < 8 and Lat >= 0: 
+    elif Lat < 8 and Lat >= 0:
        zone_letter='N'
-    elif Lat < 0 and Lat >= -8: 
+    elif Lat < 0 and Lat >= -8:
        zone_letter='M'
-    elif Lat < -8 and Lat >= -16: 
+    elif Lat < -8 and Lat >= -16:
        zone_letter='L'
-    elif Lat < -16 and Lat >= -24: 
+    elif Lat < -16 and Lat >= -24:
        zone_letter='K'
-    elif Lat < -24 and Lat >= -32: 
+    elif Lat < -24 and Lat >= -32:
        zone_letter='J'
-    elif Lat < -32 and Lat >= -40: 
+    elif Lat < -32 and Lat >= -40:
        zone_letter='H'
-    elif Lat < -40 and Lat >= -48: 
+    elif Lat < -40 and Lat >= -48:
        zone_letter='G'
-    elif Lat <= -48 and Lat >= -56: 
+    elif Lat <= -48 and Lat >= -56:
        zone_letter='F'
-    elif Lat <= -56 and Lat >= -64: 
+    elif Lat <= -56 and Lat >= -64:
        zone_letter='E'
-    elif Lat <= -64 and Lat >= -72: 
+    elif Lat <= -64 and Lat >= -72:
        zone_letter='D'
-    elif Lat <= -72 and Lat >= -80: 
+    elif Lat <= -72 and Lat >= -80:
        zone_letter='C'
     else:
        zone_letter='Z'
@@ -158,10 +130,10 @@ def zone_identification(Lat, Long):
 
 
 def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
-#"""converts UTM coords to lat/long.  Equations from USGS Bulletin 1532 
-#East Longitudes are positive, West longitudes are negative. 
+#"""converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
+#East Longitudes are positive, West longitudes are negative.
 #North latitudes are positive, South latitudes are negative
-#Lat and Long are in decimal degrees. 
+#Lat and Long are in decimal degrees.
 #Written by Chuck Gantz- chuck.gantz@globalstar.com
 #Converted to Python by Russ Nelson <nelson@crynwr.com>
 #Modified by Francesco Grigoli <fgrigoli@inogs.it>"""
@@ -190,7 +162,7 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
     M = y / k0
     mu = M/(a*(1-eccSquared/4-3*eccSquared*eccSquared/64-5*eccSquared*eccSquared*eccSquared/256))
 
-    phi1Rad = (mu + (3*e1/2-27*e1*e1*e1/32)*sin(2*mu) 
+    phi1Rad = (mu + (3*e1/2-27*e1*e1*e1/32)*sin(2*mu)
                + (21*e1*e1/16-55*e1*e1*e1*e1/32)*sin(4*mu)
                +(151*e1*e1*e1/96)*sin(6*mu))
     phi1 = phi1Rad*_rad2deg;
@@ -214,4 +186,3 @@ if __name__ == '__main__':
     (z, e, n) = LLtoUTM(23, 45.00, -75.00)
     print(z, e, n)
     print(UTMtoLL(23, e, n, z))
-

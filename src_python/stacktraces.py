@@ -151,6 +151,24 @@ class Stacktraces:
         self.obs_dataH=obs_dataH
 
 
+    # def pca_win(xtr, ytr, ztr, iwin):
+    #     for i in range(self.nstation):
+    #          for j in range(iwin,self.ns-iwin):
+    #              X=self.xtr[i,j-iwin:j+iwin]-num.mean(self.xtr[i,j-iwin:j+iwin])
+    #              Y=self.ytr[i,j-iwin:j+iwin]-num.mean(self.ytr[i,j-iwin:j+iwin])
+    #              Z=self.ztr[i,j-iwin:j+iwin]-num.mean(self.ztr[i,j-iwin:j+iwin])
+    #              cov=num.vstack((X,Y,Z))
+    #              C=num.dot(cov,cov.T)
+    #              U, s, V = num.linalg.svd(C, full_matrices=True)
+    #              obs_dataH[i,j]=1-((s[1]+s[2])/(2*s[0])))
+    #              azm.append(num.arctan2(V[0][1],V[0][0])*(180/num.pi))
+    #              inc.append(num.arccos(num.abs(V[0][2]))*(180/num.pi))
+    #           obs_dataH[i,j]
+    #     dol=num.array(dol); azm=num.array(azm); inc=num.array(inc)
+    #     azm[azm<0]=360+azm[azm<0]
+    # return dol,azm,inc
+
+
     def loc_stalta(self, nshort_p, nshort_s, slrat, norm=1):
         tshort_p=nshort_p*self.deltat; tshort_s=nshort_s*self.deltat
         tlong_p=tshort_p*slrat; tlong_s=tshort_s*slrat

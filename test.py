@@ -1,8 +1,8 @@
-import loki
+import .src_python.loki
 import numpy as num
 
-db_path='/Users/francesco/Desktop/KOREA/korea_time/korea_herr'
-data_path='/Users/francesco/Desktop/KOREA/2016-09-12-mww54-south-korea'
+db_path='/Users/francesco/Data/KOREA/korea_time/korea_herr'
+data_path='/Users/francesco/Data/KOREA/2016-09-12-mww54-south-korea'
 output_path='/Users/francesco/Desktop/test'
 hdr_filename='interpolated.header.hdr'
 inputs={}
