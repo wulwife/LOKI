@@ -75,7 +75,6 @@ class Loki:
             wobj=waveforms.Waveforms(event_path, extension, comp)
             sobj=stacktraces.Stacktraces(tobj, wobj, **inputs)
             event=sobj.evid
-            sobj.cfunc_erg(ergz=False)
 
 
             print('Processing to the event folder: ', event_path, event)
@@ -88,13 +87,12 @@ class Loki:
             tp_mod, ts_mod=sobj.time_extractor(tp, ts)
             tp_mod, ts_mod=tt_processing.tt_f2i(sobj.deltat,tp_mod,ts_mod, npr)
 
-
             for i in range(ntrial):
                 nshort_p=int(tshortp[i]//sobj.deltat)
                 nshort_s=int(tshorts[i]//sobj.deltat)
                 nlong_s=int(nshort_p*slrat)
                 nlong_s=int(nshort_s*slrat)
-                obs_dataP, obs_dataS=sobj.loc_stalta(nshort_p, nshort_s, slrat,norm=1)
+                obs_dataP, obs_dataS=sobj.loc_stalta(nshort_p, nshort_s, slrat, norm=1)
                 corrmatrix=location.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 cmax=num.max(corrmatrix)
                 corrmatrix=num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))

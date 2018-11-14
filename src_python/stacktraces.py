@@ -22,7 +22,7 @@ class Stacktraces:
         self.check_sampling_rate(wobj)
         self.check_starting_time(wobj)
         self.loki_input(wobj, tobj, derivative)
-        self.characteristic_function(vfunc,hfunc, epsilon)
+        self.characteristic_function(vfunc,hfunc,epsilon)
 
 
     def check_sampling_rate(self,wobj):
@@ -76,8 +76,9 @@ class Stacktraces:
             if derivative:
                tr[i,1:self.ns]=((tr[i,1:]-tr[i,0:self.ns-1])/self.deltat)
                tr[i,0]=0.
+               tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
             else:
-               tr[i,:]=1.
+               tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
         return tr
 
 
@@ -108,11 +109,18 @@ class Stacktraces:
 
     def cfunc_erg(self, ergz):
         if ergz:
-           self.obs_dataV=(self.ztr**2)
+           obs_dataV=(self.ztr**2)
+           for i in range(self.nstation):
+               obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+           self.obs_dataV=obs_dataV
         else:
-           self.obs_dataV=(self.ztr**2)
-           self.obs_dataH=(self.xtr**2)*(self.ytr**2)
-
+           obs_dataV=(self.ztr**2)
+           obs_dataH=(self.xtr**2)+(self.ytr**2)
+           for i in range(self.nstation):
+               obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
+               obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+           self.obs_dataH=obs_dataH
+           self.obs_dataV=obs_dataV
 
     def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])

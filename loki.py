@@ -21,6 +21,7 @@ import LatLongUTMconversion
 import location
 import C_STALTA
 import tt_processing
+import traveltimes
 from obspy.core   import read
 from obspy.signal import filter
 from scipy.signal import hilbert

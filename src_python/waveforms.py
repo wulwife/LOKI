@@ -27,6 +27,10 @@ class Waveforms:
     def load_waveforms(self, event_path, extension, comps):
         files=os.path.join(event_path,extension)
         traces=read(files)
+        #traces.detrend('demean')
+        #traces.detrend('linear')
+        #traces.filter("highpass", freq=1.0)
+        #traces.filter("bandpass", freqmin=1.0, freqmax=10.0)
         self.stream={}
         for comp in comps:
             self.stream[comp]={}
