@@ -1,10 +1,10 @@
-import .src_python.loki
+import src_python.loki
 import numpy as num
 
-db_path='/Users/francesco/Data/KOREA/korea_time/korea_herr'
-data_path='/Users/francesco/Data/KOREA/2016-09-12-mww54-south-korea'
-output_path='/Users/francesco/Desktop/test'
-hdr_filename='interpolated.header.hdr'
+db_path='./Test_dataset/Traveltimes'
+data_path='./Test_dataset/Data'
+output_path='./Test_dataset/output'
+hdr_filename='header.hdr'
 inputs={}
 inputs['tshortp_min']=0.1
 inputs['tshortp_max']=0.2
@@ -19,7 +19,7 @@ inputs['hfunc']='pca'
 inputs['model']='interpolated'
 precision='single'
 comp=['E','N','Z']
-extension='*.SAC'
+extension='*'
 #test
 
 l1=loki.Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
