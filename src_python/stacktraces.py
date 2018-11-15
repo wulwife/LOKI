@@ -3,7 +3,7 @@ import waveforms
 from datetime import datetime
 import numpy as num
 import matplotlib.pyplot as plt
-from scipy.signal import hilbert
+#from scipy.signal import hilbert
 import DET_STALTA
 import LOC_STALTA
 
@@ -81,6 +81,13 @@ class Stacktraces:
                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
         return tr
 
+    def hilbert(self, trace):
+        tracef=num.fft.fft(trace)
+        nsta,nfreq=num.shape(tracef)
+        freqs=num.fft.fftfreq(nfreq,self.deltat)
+        traceh=tracef+(num.sign(freqs).T*tracef)
+        trace=num.fft.ifft(traceh).real
+        return trace
 
     def time_extractor(self, tp, ts):
         nxyz= num.size(tp[self.stations[0]])
@@ -105,7 +112,6 @@ class Stacktraces:
         else:
            print('wrong characterstic functions, energy used as default')
            self.cfunc_erg(False)
-
 
     def cfunc_erg(self, ergz):
         if ergz:
@@ -145,8 +151,8 @@ class Stacktraces:
 
     def cfunc_pca(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns])
-        obs_dataH1=hilbert(self.xtr)
-        obs_dataH2=hilbert(self.ytr)
+        obs_dataH1=self.hilbert(self.xtr)
+        obs_dataH2=self.hilbert(self.ytr)
         obs_dataH1C=num.conjugate(obs_dataH1)
         obs_dataH2C=num.conjugate(obs_dataH2)
         xx=obs_dataH1*obs_dataH1C; xy=obs_dataH1*obs_dataH2C
