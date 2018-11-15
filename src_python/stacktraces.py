@@ -130,7 +130,7 @@ class Stacktraces:
 
     def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])
-        obs_dataH1=hilbert(self.xtr); obs_dataH2=hilbert(self.ytr); obs_dataH3=hilbert(self.ztr)
+        obs_dataH1=self.hilbert(self.xtr); obs_dataH2=self.hilbert(self.ytr); obs_dataH3=self.hilbert(self.ztr)
         obs_dataH1C=num.conjugate(obs_dataH1); obs_dataH2C=num.conjugate(obs_dataH2); obs_dataH3C=num.conjugate(obs_dataH3)
         xx=obs_dataH1*obs_dataH1C; xy=obs_dataH1*obs_dataH2C; xz=obs_dataH1*obs_dataH3C
         yx=obs_dataH2*obs_dataH1C; yy=obs_dataH2*obs_dataH2C; yz=obs_dataH2*obs_dataH2C
