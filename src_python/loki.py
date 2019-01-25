@@ -97,7 +97,7 @@ class Loki:
                 cmax=num.max(corrmatrix)
                 corrmatrix=num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
                 (ixloc,iyloc,izloc)=num.unravel_index(num.argmax(corrmatrix),(tobj.nx,tobj.ny,tobj.nz))
-                xloc=tobj.x[ixloc]; yloc=tobj.y[iyloc]; zloc=tobj.x[izloc]
+                xloc=tobj.x[ixloc]; yloc=tobj.y[iyloc]; zloc=tobj.z[izloc]
                 out_file = open(self.output_path+'/'+event+'/'+event+'.loc','a')
                 out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 out_file.close()
