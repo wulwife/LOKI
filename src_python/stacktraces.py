@@ -81,12 +81,12 @@ class Stacktraces:
                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
         return tr
 
-    def hilbert(self, trace):
+    def analytic_signal(self, trace):
         tracef=num.fft.fft(trace)
         nsta,nfreq=num.shape(tracef)
         freqs=num.fft.fftfreq(nfreq,self.deltat)
         traceh=tracef+(num.sign(freqs).T*tracef)
-        trace=num.fft.ifft(traceh).real
+        trace=trace+1j*num.fft.ifft(traceh).real
         return trace
 
     def time_extractor(self, tp, ts):
@@ -130,7 +130,7 @@ class Stacktraces:
 
     def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])
-        obs_dataH1=self.xtr+self.hilbert(self.xtr); obs_dataH2=self.ytr+self.hilbert(self.ytr); obs_dataH3=self.ztr+self.hilbert(self.ztr)
+        obs_dataH1=self.analytic_signal(self.xtr); obs_dataH2=self.analytic_signal(self.ytr); obs_dataH3=self.analytic_signal(self.ztr)
         obs_dataH1C=num.conjugate(obs_dataH1); obs_dataH2C=num.conjugate(obs_dataH2); obs_dataH3C=num.conjugate(obs_dataH3)
         xx=obs_dataH1*obs_dataH1C; xy=obs_dataH1*obs_dataH2C; xz=obs_dataH1*obs_dataH3C
         yx=obs_dataH2*obs_dataH1C; yy=obs_dataH2*obs_dataH2C; yz=obs_dataH2*obs_dataH2C
@@ -151,8 +151,8 @@ class Stacktraces:
 
     def cfunc_pca(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns])
-        obs_dataH1=self.hilbert(self.xtr)
-        obs_dataH2=self.hilbert(self.ytr)
+        obs_dataH1=self.analytic_signal(self.xtr)
+        obs_dataH2=self.analytic_signal(self.ytr)
         obs_dataH1C=num.conjugate(obs_dataH1)
         obs_dataH2C=num.conjugate(obs_dataH2)
         xx=obs_dataH1*obs_dataH1C; xy=obs_dataH1*obs_dataH2C
