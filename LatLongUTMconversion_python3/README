@@ -1,0 +1,15 @@
+This module has two functions to convert between latitude and longitude and
+UTM zone, northing, and easting.
+
+    import LatLongUTMconversion
+
+    (z, e, n) = LatLongUTMconversion.LLtoUTM(23, 45.00, -75.00)
+    print z, e, n
+    (lat, lon) = LatLongUTMconversion.UTMtoLL(23, n, e, z)
+    print lat, lon
+
+Install the module by running this:
+
+    python setup.py install
+
+Russ Nelson.  Google for Russ.

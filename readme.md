@@ -52,3 +52,12 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
+
+
+INSTALLATION REQUIREMENTS
+To use loki you will need:
+- GCC6 or later versions or any C compiler that supports OpenMP calls
+
+- Python3 libraries, Numpy and Obspy
+
+- Python3 library: LatLonUTM converter, provided here but developed by third parts (soon this dependence will be removed by adding an internal function)

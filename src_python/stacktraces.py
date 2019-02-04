@@ -130,7 +130,7 @@ class Stacktraces:
 
     def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])
-        obs_dataH1=self.hilbert(self.xtr); obs_dataH2=self.hilbert(self.ytr); obs_dataH3=self.hilbert(self.ztr)
+        obs_dataH1=self.xtr+self.hilbert(self.xtr); obs_dataH2=self.ytr+self.hilbert(self.ytr); obs_dataH3=self.ztr+self.hilbert(self.ztr)
         obs_dataH1C=num.conjugate(obs_dataH1); obs_dataH2C=num.conjugate(obs_dataH2); obs_dataH3C=num.conjugate(obs_dataH3)
         xx=obs_dataH1*obs_dataH1C; xy=obs_dataH1*obs_dataH2C; xz=obs_dataH1*obs_dataH3C
         yx=obs_dataH2*obs_dataH1C; yy=obs_dataH2*obs_dataH2C; yz=obs_dataH2*obs_dataH2C
@@ -141,8 +141,8 @@ class Stacktraces:
                 cov2d=num.array([[xx[i,j], xy[i,j]],[yx[i,j], yy[i,j]]])
                 U2d, s2d, V2d = num.linalg.svd(cov2d, full_matrices=True)
                 U3d, s3d, V3d = num.linalg.svd(cov3d, full_matrices=True)
-                obs_dataV[i,j]=(s3d[0]**2)
-                obs_dataH[i,j]=(s2d[0]**2)
+                obs_dataV[i,j]=(s3d[0]**2)*(num.abs(V3d[0][2]))
+                obs_dataH[i,j]=(s2d[0]**2)*(1-num.abs(V3d[0][2]))
             obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
             obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
         self.obs_dataH=obs_dataH
