@@ -88,7 +88,7 @@ class Traveltimes:
         if zlim:
            nz_ini=int((zlim[0]-self.z0)/self.dz)
            nz_fin=int((zlim[1]-self.z0)/self.dz)
-           self.z0=zlim[0]-self.z0
+           self.z0=zlim[0]
         else:
            nz_ini=0; nz_fin=self.nz
         nx_new=nx_fin-nx_ini; ny_new=ny_fin-ny_ini; nz_new=nz_fin-nz_ini;
