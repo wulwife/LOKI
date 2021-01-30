@@ -1,11 +1,7 @@
-import traveltimes
-import waveforms
-from datetime import datetime
 import numpy as num
-import matplotlib.pyplot as plt
-#from scipy.signal import hilbert
-import DET_STALTA
-import LOC_STALTA
+import DET_STALTA     # C
+import LOC_STALTA     # C
+
 
 class Stacktraces:
 
@@ -24,7 +20,6 @@ class Stacktraces:
         self.loki_input(wobj, tobj, derivative)
         self.characteristic_function(vfunc,hfunc,epsilon)
 
-
     def check_sampling_rate(self,wobj):
         intsamp=1E6
         deltas=[]
@@ -34,10 +29,9 @@ class Stacktraces:
         deltas=num.array(deltas)
         ideltas=num.unique((deltas*intsamp).astype(int))
         if num.size(ideltas)==1:
-           self.deltat=deltas[0]
+            self.deltat=deltas[0]
         else:
-           raise ValueError('Error!! All trace must have the same sampling rate')
-
+            raise ValueError('Error!! All trace must have the same sampling rate')
 
     def check_starting_time(self,wobj):
         intsamp=1E6
@@ -47,7 +41,7 @@ class Stacktraces:
             for sta in (wobj.stream[comp]).keys():
                 dtimes.append(wobj.stream[comp][sta][0])
                 if self.ns<num.size(wobj.stream[comp][sta][2]):
-                   self.ns=num.size(wobj.stream[comp][sta][2])
+                    self.ns=num.size(wobj.stream[comp][sta][2])
         self.dtime_max=max(dtimes)
         self.evid=(self.dtime_max).isoformat()
 
@@ -74,11 +68,11 @@ class Stacktraces:
             idt=num.int((self.dtime_max-stream[sta][0]).total_seconds()/self.deltat)
             tr[i,0:nstr-idt]=stream[sta][2][idt:]
             if derivative:
-               tr[i,1:self.ns]=((tr[i,1:]-tr[i,0:self.ns-1])/self.deltat)
-               tr[i,0]=0.
-               tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
+                tr[i,1:self.ns]=((tr[i,1:]-tr[i,0:self.ns-1])/self.deltat)
+                tr[i,0]=0.
+                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
             else:
-               tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
+                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
         return tr
 
     def analytic_signal(self, trace):
@@ -98,35 +92,34 @@ class Stacktraces:
             ts_mod[:,i]=ts[sta]
         return (tp_mod, ts_mod)
 
-
     def characteristic_function(self, vfunc='erg', hfunc='pca', epsilon=0.001):
         if vfunc=='erg' and hfunc=='pca':
-           self.cfunc_erg(True)
-           self.cfunc_pca(epsilon)
+            self.cfunc_erg(True)
+            self.cfunc_pca(epsilon)
         elif vfunc=='pca' and hfunc=='pca':
-           self.cfunc_pcafull(epsilon)
+            self.cfunc_pcafull(epsilon)
         elif vfunc=='erg' and hfunc=='erg':
-           self.cfunc_erg(False)
+            self.cfunc_erg(False)
         elif vfunc=='erg' and hfunc=='null':
-           self.cfunc_erg(True)
+            self.cfunc_erg(True)
         else:
-           print('wrong characterstic functions, energy used as default')
-           self.cfunc_erg(False)
+            print('wrong characterstic functions, energy used as default')
+            self.cfunc_erg(False)
 
     def cfunc_erg(self, ergz):
         if ergz:
-           obs_dataV=(self.ztr**2)
-           for i in range(self.nstation):
-               obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
-           self.obs_dataV=obs_dataV
+            obs_dataV=(self.ztr**2)
+            for i in range(self.nstation):
+                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+            self.obs_dataV=obs_dataV
         else:
-           obs_dataV=(self.ztr**2)
-           obs_dataH=(self.xtr**2)+(self.ytr**2)
-           for i in range(self.nstation):
-               obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
-               obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
-           self.obs_dataH=obs_dataH
-           self.obs_dataV=obs_dataV
+            obs_dataV=(self.ztr**2)
+            obs_dataH=(self.xtr**2)+(self.ytr**2)
+            for i in range(self.nstation):
+                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
+                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+            self.obs_dataH=obs_dataH
+            self.obs_dataV=obs_dataV
 
     def cfunc_pcafull(self, epsilon):
         obs_dataH=num.zeros([self.nstation,self.ns]); obs_dataV=num.zeros([self.nstation,self.ns])

@@ -1,13 +1,8 @@
-# to call loki you need
-# to add the path of the src_python folder to the PYTHONPATH
-# export PYTHONPATH=${PYTHONPATH}:/Users/francesco/Desktop/LOKI_GIT/LOKI/src_python
+from loki.loki import Loki
 
-import loki
-import numpy as num
-
-db_path='./Test_dataset/Traveltimes'
-data_path='./Test_dataset/Data'
-output_path='./Test_dataset/output'
+db_path='../Test_dataset/Traveltimes'
+data_path='../Test_dataset/Data'
+output_path='../Test_dataset/output'
 hdr_filename='header.hdr'
 inputs={}
 inputs['tshortp_min']=0.1
@@ -25,7 +20,7 @@ inputs['epsilon']=0.001
 precision='single'
 comp=['E','N','Z']
 extension='*'
-#test
+# test
 
-l1=loki.Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
+l1 = Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
 l1.location(extension, comp, precision, **inputs)

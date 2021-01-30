@@ -1,11 +1,8 @@
-from mpl_toolkits.mplot3d import Axes3D
-import LatLongUTMconversion as ll
+import loki.LatLongUTMconversion as ll
 from scipy.interpolate import griddata
 import numpy as num
 import pylab as plt
-from matplotlib import cbook
-from matplotlib import cm
-from matplotlib.colors import LightSource
+
 
 def conversion(latmin, latmax, lonmin, lonmax, border, spacing, filename):
     zone,xmin,ymin=ll.LLtoUTM(23,latmin,lonmin)
