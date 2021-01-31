@@ -1,0 +1,6 @@
+## Don't account for the accidentally compiled python
+*.pyc
+__pycache__/
+*.log
+*.pkl
+.idea

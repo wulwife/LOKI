@@ -1,5 +1,4 @@
-from mpl_toolkits.mplot3d import Axes3D
-import LatLongUTMconversion as ll
+import loki.LatLongUTMconversion as ll
 from scipy.interpolate import griddata
 import numpy as num
 import pylab as plt
@@ -42,7 +41,7 @@ nx=len(xax); ny=len(yax); nz=450 # numero grid points lungo x,y,z
 pmodel=num.zeros([nx,ny,nz], dtype=num.float32)
 smodel=num.zeros([nx,ny,nz], dtype=num.float32)
 vp1=3.5; vp2=3.7; vp3=4.2; vp4=4.5; vp5=5.0; vp6=6.5; vp7=6.8; vp8=8.0;
-top1=2700; top2=800; top3=-790; top4=-1200; top5=-2200; top6=-4200; top7=-17000; top8=-20000; 
+top1=2700; top2=800; top3=-790; top4=-1200; top5=-2200; top6=-4200; top7=-17000; top8=-20000;
 vpsratio=1.75
 vs1=0.3/vpsratio; vs2=3.5/vpsratio; vs3=3.7/vpsratio; vs4=4.2/vpsratio; vs5=5.0/vpsratio; vs6=6.5/vpsratio; vs7=6.8/vpsratio; vs8=8.0/vpsratio;
 iz1=int((top1-top2)/50.)+1;
@@ -67,7 +66,7 @@ top1=2700;
 vstopo=0.3/vpsratio;
 for i in range(nx):
 	for j in range(ny):
-		iztopo=int((num.round(top1-topo[i,j])/50.))+1    
+		iztopo=int((num.round(top1-topo[i,j])/50.))+1
 		pmodel[i,j,0:iztopo]=vptopo#(1./vptopo)*dx #podvin e lecompte richiede slowness*spacing
 		smodel[i,j,0:iztopo]=vstopo#(1./vstopo)*dx
 

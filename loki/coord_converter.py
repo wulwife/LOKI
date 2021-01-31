@@ -1,19 +1,18 @@
-from numpy import pi, sin, cos, tan, sqrt
-
+from numpy import pi, sin, cos, tan, sqrt, arange
 
 _deg2rad = pi / 180.0
 _rad2deg = 180.0 / pi
 
-_EquatorialRadius = 6378137 #equatorial radius in wgs84
-_eccentricitySquared = 0.00669438 #square of eccentricity in wgs84
-
+_EquatorialRadius = 6378137  # equatorial radius in wgs84
+_eccentricitySquared = 0.00669438  # square of eccentricity in wgs84
 
 
 def LLtoUTM(Lat, Long):
-"""converts lat/long to UTM coords.
-East Longitudes are positive, West longitudes are negative.
-North latitudes are positive, South latitudes are negative
-Lat and Long are in decimal degrees"""
+    """converts lat/long to UTM coords.
+    East Longitudes are positive, West longitudes are negative.
+    North latitudes are positive, South latitudes are negative
+    Lat and Long are in decimal degrees
+    """
 
     a = _EquatorialRadius
     eccSquared = _eccentricitySquared
@@ -29,7 +28,7 @@ Lat and Long are in decimal degrees"""
     LongOrigin = (ZoneNumber - 1)*6 - 180 + 3 #+3 puts origin in middle of zone
     LongOriginRad = LongOrigin * _deg2rad
 
-    #compute the UTM Zone from the latitude and longitude
+    # compute the UTM Zone from the latitude and longitude
     UTMZone = "%d%c" % (ZoneNumber, _UTMLetterDesignator(Lat))
 
     eccPrimeSquared = (eccSquared)/(1-eccSquared)
@@ -64,14 +63,14 @@ Lat and Long are in decimal degrees"""
     return (UTMZone, UTMEasting, UTMNorthing)
 
 
-
 def zone_identification(Lat, Long):
 
     letters=['C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Z']
-    lats=num.arange(-84,96,12)
+    lats=arange(-84,96,12)
     for l in lats:
-        if Lat<l:
-             #da moficicare
+        if Lat < l:
+            # da modificare
+            pass
 
     zone_number=None
     if Lat <= 84 and Lat >= 72:
@@ -128,15 +127,15 @@ def zone_identification(Lat, Long):
     return zone_number, zone_letter
 
 
-
 def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
-#"""converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
-#East Longitudes are positive, West longitudes are negative.
-#North latitudes are positive, South latitudes are negative
-#Lat and Long are in decimal degrees.
-#Written by Chuck Gantz- chuck.gantz@globalstar.com
-#Converted to Python by Russ Nelson <nelson@crynwr.com>
-#Modified by Francesco Grigoli <fgrigoli@inogs.it>"""
+    """converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
+    East Longitudes are positive, West longitudes are negative.
+    North latitudes are positive, South latitudes are negative
+    Lat and Long are in decimal degrees.
+    Written by Chuck Gantz- chuck.gantz@globalstar.com
+    Converted to Python by Russ Nelson <nelson@crynwr.com>
+    Modified by Francesco Grigoli <fgrigoli@inogs.it>
+    """
 
     k0 = 0.9996
     a = _EquatorialRadius
@@ -181,6 +180,7 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
             *D*D*D*D*D/120)/cos(phi1Rad)
     Long = LongOrigin + Long * _rad2deg
     return (Lat, Long)
+
 
 if __name__ == '__main__':
     (z, e, n) = LLtoUTM(23, 45.00, -75.00)

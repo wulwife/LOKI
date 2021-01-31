@@ -13,21 +13,22 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 #       Author: Francesco Grigoli
-import os, sys
+import os
+import sys
 import numpy as num
-import matplotlib.pyplot as plt
-import LatLongUTMconversion as ll
+import loki.LatLongUTMconversion as ll
+
 
 class Traveltimes:
 
     def __init__(self, db_path, hdr_filename):
         if not os.path.isdir(db_path):
-           print('Error: data or database path do not exist')
-           sys.exit()
+            print('Error: data or database path do not exist')
+            sys.exit()
         self.db_path = db_path
         if not os.path.isfile(db_path+'/'+hdr_filename):
-           print('Error: header file does not exist')
-           sys.exit()
+            print('Error: header file does not exist')
+            sys.exit()
         self.hdr_filename = hdr_filename
         self.load_header()
 
