@@ -23,13 +23,13 @@ def LLtoUTM(Lat, Long):
     LatRad = Lat*_deg2rad
     LongRad = Long*_deg2rad
 
-    zone_number, zone_letter = zone_identification(Lat, Long)
+    ZoneNumber, ZoneLetter = zone_identification(Lat, Long)
 
-    LongOrigin = (ZoneNumber - 1)*6 - 180 + 3 #+3 puts origin in middle of zone
+    LongOrigin =(ZoneNumber - 1)*6 - 180 + 3 #+3 puts origin in middle of zone
     LongOriginRad = LongOrigin * _deg2rad
 
     # compute the UTM Zone from the latitude and longitude
-    UTMZone = "%d%c" % (ZoneNumber, _UTMLetterDesignator(Lat))
+    UTMZone = "%d%c" % (ZoneNumber, ZoneLetter)
 
     eccPrimeSquared = (eccSquared)/(1-eccSquared)
     N = a/sqrt(1-eccSquared*sin(LatRad)*sin(LatRad))
@@ -127,14 +127,14 @@ def zone_identification(Lat, Long):
     return zone_number, zone_letter
 
 
-def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
+def UTMtoLL(northing, easting, zone):
     """converts UTM coords to lat/long.  Equations from USGS Bulletin 1532
     East Longitudes are positive, West longitudes are negative.
     North latitudes are positive, South latitudes are negative
     Lat and Long are in decimal degrees.
     Written by Chuck Gantz- chuck.gantz@globalstar.com
     Converted to Python by Russ Nelson <nelson@crynwr.com>
-    Modified by Francesco Grigoli <fgrigoli@inogs.it>
+    Modified by Francesco Grigoli <fsco.grigoli@gmail.com>
     """
 
     k0 = 0.9996
@@ -183,6 +183,8 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
 
 
 if __name__ == '__main__':
-    (z, e, n) = LLtoUTM(23, 45.00, -75.00)
-    print(z, e, n)
-    print(UTMtoLL(23, e, n, z))
+    lon0=11.2003
+    lat0=45.5003
+    (z, e, n) = LLtoUTM(lon0, lat0)
+    (lon1,lat1)=UTMtoLL(n, e, z)
+    print(lon0,' : ',lon1,' and ', lat0,' : ',lat1)
