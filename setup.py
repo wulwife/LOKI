@@ -10,7 +10,7 @@ with open("requirements.txt") as f:
 
 # ===================================  DEFINE COMPILER PATH !!!
 # os.environ["CC"] = 'gcc-mp-7'
-os.environ["CC"] = "/usr/local/Cellar/gcc/10.2.0_2/bin/gcc-10"
+os.environ["CC"] = "gcc"
 
 
 # ===================================  C - COMPILING
