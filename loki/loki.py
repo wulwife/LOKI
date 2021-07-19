@@ -1,6 +1,7 @@
 import os
 import numpy as num
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 #
 from loki import traveltimes
 from loki import waveforms
@@ -28,13 +29,13 @@ class Loki:
     def location_data_struct(self, data_path, output_path):
         events=[]
         data_tree=[]
-        for root,dirs,files in os.walk(data_path):
+        for root, dirs, files in os.walk(data_path):
             if not dirs:
                 data_tree.append(root)
-                events.append(root.split('/')[-1])
-        for event in events:
-            if not os.path.isdir(output_path):
-                os.mkdir(output_path)
+        data_tree.sort()
+        events = [idtree.split('/')[-1] for idtree in data_tree]
+        if not os.path.isdir(output_path):
+            os.mkdir(output_path)
         return data_tree, events
 
     def detection_data_struct(self, data_path, output_path):
@@ -43,28 +44,34 @@ class Loki:
         for root, dirs, files in os.walk(data_path):
             if not dirs:
                 data_tree.append(root)
-                events.append(root.split('/')[-1])
+        data_tree.sort()
+        events = [idtree.split('/')[-1] for idtree in data_tree]
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
         return data_tree, events
 
     def location(self, extension='*', comp=['E', 'N', 'Z'], precision='single', **inputs):
-        tshortp_min = inputs['tshortp_min']
-        tshortp_max = inputs['tshortp_max']
-        tshorts_min = inputs['tshorts_min']
-        tshorts_max = inputs['tshorts_max']
-        slrat = inputs['slrat']
+        if 'tshortp_min' in inputs:
+            # need to calculate STA/LTA for stacking
+            STALTA = True
+            tshortp_min = inputs['tshortp_min']
+            tshortp_max = inputs['tshortp_max']
+            tshorts_min = inputs['tshorts_min']
+            tshorts_max = inputs['tshorts_max']
+            slrat = inputs['slrat']
+            ntrial = inputs['ntrial']
+        
+            tshortp = num.linspace(tshortp_min, tshortp_max, ntrial)
+            tshorts = num.linspace(tshorts_min, tshorts_max, ntrial)
+        else:
+            # no need to calculate STA/LTA ratio for stacking
+            STALTA = False
+            ntrial = 1
+            
         npr = inputs['npr']
-        ntrial = inputs['ntrial']
-        derivative = inputs['derivative']
         model = inputs['model']
-        vfunc = inputs['vfunc']
-        hfunc = inputs['hfunc']
-        epsilon = inputs['epsilon']
-
-        tshortp = num.linspace(tshortp_min,tshortp_max,ntrial)
-        tshorts = num.linspace(tshorts_min,tshorts_max,ntrial)
-
+        
+        # load traveltime data set
         tobj = traveltimes.Traveltimes(self.db_path, self.hdr_filename)
         tp = tobj.load_traveltimes('P', model, precision)
         ts = tobj.load_traveltimes('S', model, precision)
@@ -84,11 +91,18 @@ class Loki:
             tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat,tp_mod,ts_mod, npr)
 
             for i in range(ntrial):
-                nshort_p = int(tshortp[i]//sobj.deltat)
-                nshort_s = int(tshorts[i]//sobj.deltat)
-                nlong_s = int(nshort_p*slrat)
-                nlong_s = int(nshort_s*slrat)
-                obs_dataP, obs_dataS = sobj.loc_stalta(nshort_p, nshort_s, slrat, norm=1)
+                if STALTA:
+                    # need to calculate STA/LTA from the characteristic funtion
+                    # then stack the STA/LTA for imaging
+                    nshort_p = int(tshortp[i]//sobj.deltat)
+                    nshort_s = int(tshorts[i]//sobj.deltat)
+                    obs_dataP, obs_dataS = sobj.loc_stalta(nshort_p, nshort_s, slrat, norm=1)
+                else:
+                    # no need to calculate STA/LTA 
+                    # directly stack the characteristic function for imaging
+                    obs_dataP = sobj.obs_dataV  # vertical -> P
+                    obs_dataS = sobj.obs_dataH  # horizontal -> S
+                
                 corrmatrix = location.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 cmax = num.max(corrmatrix)
                 corrmatrix = num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
@@ -97,10 +111,14 @@ class Loki:
                 yloc = tobj.y[iyloc]
                 zloc = tobj.z[izloc]
                 out_file = open(self.output_path+'/'+event+'/'+event+'.loc', 'a')
-                out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
+                if STALTA:
+                    out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
+                else:
+                    out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+'\n')
                 out_file.close()
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
+            
             self.catalogue_creation(event, tobj.lat0, tobj.lon0, ntrial)
         print('Location process completed!!!')
 
@@ -159,7 +177,7 @@ class Loki:
         ax.set_xlabel('X (km)')
         ax.set_ylabel('Y (km)')
         cbar = plt.colorbar(cs)
-        plt.axes().set_aspect('equal')
+        ax.set_aspect('equal')
         plt.savefig(event_path+'/'+'Coherence_matrix_xy'+str(itrial)+'.eps')
 
         fig = plt.figure()
@@ -171,7 +189,7 @@ class Loki:
         ax.set_ylabel('Z (km)')
         cbar = plt.colorbar(cs)
         ax.invert_yaxis()
-        plt.axes().set_aspect('equal')
+        ax.set_aspect('equal')
         plt.savefig(event_path+'/'+'Coherence_matrix_xz'+str(itrial)+'.eps')
 
         fig = plt.figure()
@@ -183,6 +201,6 @@ class Loki:
         ax.set_ylabel('Z (km)')
         ax.invert_yaxis()
         cbar = plt.colorbar(cs)
-        plt.axes().set_aspect('equal')
+        ax.set_aspect('equal')
         plt.savefig(event_path+'/'+'Coherence_matrix_yz'+str(itrial)+'.eps')
         plt.close("all")

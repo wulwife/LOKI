@@ -20,6 +20,12 @@ location = Extension('location',
                      extra_compile_args=['-O3', '-fopenmp'],
                      extra_link_args=['-lgomp'])
 
+location_t0 = Extension('location_t0',
+                     sources=['loki/src_c/location_t0_py3_omp.c'],
+                     include_dirs=[numpy.get_include()],
+                     extra_compile_args=['-O3', '-fopenmp'],
+                     extra_link_args=['-lgomp'])
+
 detection = Extension('detection',
                       sources=['loki/src_c/detection_py3_omp.c'],
                       include_dirs=[numpy.get_include()],
@@ -65,6 +71,7 @@ setup(
         "Intended Audience :: Science/Research",
     ],
     ext_modules=[location,
+                 location_t0,
                  detection,
                  tt_processing,
                  LOC_STALTA,
