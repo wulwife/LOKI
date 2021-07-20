@@ -2,13 +2,14 @@ import os
 import numpy as num
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+import datetime
 #
 from loki import traveltimes
 from loki import waveforms
 from loki import stacktraces
 from loki import LatLongUTMconversion
 import tt_processing                    # C
-import location                         # C
+import location_t0                         # C
 
 
 class Loki:
@@ -87,8 +88,8 @@ class Loki:
             else:
                 os.mkdir(self.output_path+'/'+event)
 
-            tp_mod, ts_mod = sobj.time_extractor(tp, ts)
-            tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat,tp_mod,ts_mod, npr)
+            tp_modse, ts_modse = sobj.time_extractor(tp, ts)  # traveltime table in second
+            tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat, tp_modse, ts_modse, npr)  # traveltime table in time point, for each imaging point traveltimes have substracted the minimal P traveltime
 
             for i in range(ntrial):
                 if STALTA:
@@ -103,14 +104,20 @@ class Loki:
                     obs_dataP = sobj.obs_dataV  # vertical -> P
                     obs_dataS = sobj.obs_dataH  # horizontal -> S
                 
-                corrmatrix = location.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
+                iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
+                evtpmin = num.amin(tp_modse[iloctime[0],:])
+                event_t0 = sobj.dtime_max + datetime.timedelta(seconds=iloctime[1]*sobj.deltat) - datetime.timedelta(seconds=evtpmin)  # event origin time
+                event_t0s = (event_t0).isoformat()
+                # corrmatrix is the stacking matrix, in 1D format but can be 
+                # reformat to 3D format, each point saves the maximum stacking 
+                # value during this calculation time period
                 cmax = num.max(corrmatrix)
                 corrmatrix = num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
                 (ixloc, iyloc, izloc) = num.unravel_index(num.argmax(corrmatrix),(tobj.nx,tobj.ny,tobj.nz))
                 xloc = tobj.x[ixloc]
                 yloc = tobj.y[iyloc]
                 zloc = tobj.z[izloc]
-                out_file = open(self.output_path+'/'+event+'/'+event+'.loc', 'a')
+                out_file = open(self.output_path+'/'+event+'/'+event_t0s+'.loc', 'a')
                 if STALTA:
                     out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 else:
@@ -119,12 +126,12 @@ class Loki:
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
             
-            self.catalogue_creation(event, tobj.lat0, tobj.lon0, ntrial)
+            self.catalogue_creation(event, event_t0s, tobj.lat0, tobj.lon0, ntrial)
         print('Location process completed!!!')
 
-    def catalogue_creation(self, event, lat0, lon0, ntrial, refell=23):
+    def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, refell=23):
         (zorig, eorig, norig) = LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
-        ev_file = self.output_path+'/'+event+'/'+event+'.loc'
+        ev_file = self.output_path+'/'+event+'/'+event_t0s+'.loc'
         data = num.loadtxt(ev_file)
         if (ntrial > 1):
             w = num.sum(data[:, 4])
@@ -144,7 +151,7 @@ class Loki:
             cb = data[4]
             cmax = data[4]
         f = open(self.output_path+'/'+'catalogue', 'a')
-        f.write(event+'    '+str(late)+'   '+str(lone)+'   '+str(zb)+'   '+str(errmax)+'   '+str(cb)+'   '+str(cmax)+'\n')
+        f.write(event_t0s+'    '+str(late)+'   '+str(lone)+'   '+str(zb)+'   '+str(errmax)+'   '+str(cb)+'   '+str(cmax)+'\n')
         f.close()
 
     def coherence_plot(self, event_path, corrmatrix, xax, yax, zax, itrial, normalization=False):
