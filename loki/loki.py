@@ -103,7 +103,7 @@ class Loki:
                     # directly stack the characteristic function for imaging
                     obs_dataP = sobj.obs_dataV  # vertical -> P
                     obs_dataS = sobj.obs_dataH  # horizontal -> S
-                
+
                 iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 evtpmin = num.amin(tp_modse[iloctime[0],:])
                 event_t0 = sobj.dtime_max + datetime.timedelta(seconds=iloctime[1]*sobj.deltat) - datetime.timedelta(seconds=evtpmin)  # event origin time

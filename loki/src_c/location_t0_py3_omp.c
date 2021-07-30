@@ -152,7 +152,7 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
     for(i=0;i<nxyz;i++){
        printf("\b\b\b\b\b%3ld %%", (100*iter++)/(nxyz-2));
        stkmax=0.;
-			 kmax=0;
+	   kmax=0;
        for(k=0;k<nsamples;k++){
            stk0p=0.;
            stk0s=0.;
@@ -174,6 +174,7 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
 					 }
        }
        corrmatrix[i]=sqrt(stkmax)/((float) nsta);
+             #pragma omp critical
 			 if (corrmatrix[i]>corrmax){
 				  corrmax=corrmatrix[i];
 			 		*iloc=i;
