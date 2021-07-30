@@ -95,9 +95,9 @@ static PyObject *py_stacking(PyObject *self, PyObject *args){
    }
 
 	 PyObject *iloctime =Py_BuildValue("(i,i)", iloc, itime);
-	 Py_DECREF(&iloc);
-	 Py_DECREF(&itime);
-
+	 /*Py_DECREF(&iloc);*/
+	 /*Py_DECREF(&itime);*/
+     
 	 PyObject *cohermat=Py_BuildValue("O",corrmatrix);
 	 Py_DECREF(corrmatrix);
 
@@ -148,7 +148,7 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
     omp_set_num_threads(nproc);
 
     printf(" Location process complete at : %3d %%",0);
-    #pragma omp parallel for shared(iter,corrmax) private(ip,is,stkmax,stk0p,stk0s,kmax,k,j)
+    #pragma omp parallel for shared(iter,corrmax,iloc,itime) private(ip,is,stkmax,stk0p,stk0s,kmax,k,j)
     for(i=0;i<nxyz;i++){
        printf("\b\b\b\b\b%3ld %%", (100*iter++)/(nxyz-2));
        stkmax=0.;
@@ -174,12 +174,12 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
 					 }
        }
        corrmatrix[i]=sqrt(stkmax)/((float) nsta);
-             #pragma omp critical
-			 if (corrmatrix[i]>corrmax){
-				  corrmax=corrmatrix[i];
-			 		*iloc=i;
-					*itime=kmax;
-			 }
+       #pragma omp critical
+       if (corrmatrix[i]>corrmax){
+          corrmax=corrmatrix[i];
+          *iloc=i;
+          *itime=kmax;
+       }
 
     }
     printf("\n ------ Event located ------ \n");
