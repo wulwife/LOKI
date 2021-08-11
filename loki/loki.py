@@ -126,10 +126,10 @@ class Loki:
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
             
-            self.catalogue_creation(event, event_t0s, tobj.lat0, tobj.lon0, ntrial)
+            self.catalogue_creation(event, event_t0s, tobj.lat0, tobj.lon0, ntrial, corrmatrix)
         print('Location process completed!!!')
 
-    def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, refell=23):
+    def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, corrmatrix, refell=23):
         (zorig, eorig, norig) = LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
         ev_file = self.output_path+'/'+event+'/'+event_t0s+'.loc'
         data = num.loadtxt(ev_file)
@@ -138,18 +138,29 @@ class Loki:
             xb = ((num.dot(data[:, 1], data[:, 4])/w)*1000)+eorig
             yb = ((num.dot(data[:, 2], data[:, 4])/w)*1000)+norig
             late, lone = LatLongUTMconversion.UTMtoLL(refell, yb, xb, zorig)
-            zb = num.dot(data[:, 3], data[:, 4])/w
-            cb = num.mean(data[:, 4])
-            cmax = num.max(data[:, 4])
+            zb = num.dot(data[:, 3], data[:, 4])/w  # depth in km
+            cb = num.mean(data[:, 4])  # the mean coherence over the ntrial realizations
+            cmax = num.max(data[:, 4])  # the maximum coherence over the ntrial realizations
             merr = num.vstack((data[:, 1], data[:, 2], data[:, 3]))
             err = num.cov(merr)
             errmax = num.sqrt(num.max(num.linalg.eigvals(err)))
         else:
-            late, lone = LatLongUTMconversion.UTMtoLL(refell, (data[2]*1000)+norig, (data[1]*1000)+eorig, zorig)
-            zb = data[3]
-            errmax = 'NA'
-            cb = data[4]
-            cmax = data[4]
+            late, lone = LatLongUTMconversion.UTMtoLL(refell, (data[2]*1000)+norig, (data[1]*1000)+eorig, zorig)  # latitude, longitude
+            zb = data[3]  # depth in km
+            cmax = data[4]  # the maximum coherence over the 3D corrmatrix
+            
+            # nomalize corrmatrix first, let minimal->1, maximum->2
+            n1 = 1.0  # minimal limit
+            n2 = 2.0  # maximum limit
+            dmax = num.amax(corrmatrix, axis=None, keepdims=True)
+            dmin = num.amin(corrmatrix, axis=None, keepdims=True)
+            k = (n2-n1)/(dmax-dmin)
+            b = (dmax*n1-dmin*n2)/(dmax-dmin)
+            corrmatrix = k*corrmatrix + b
+            
+            errmax = num.std(corrmatrix, axis=None)  # the coherence standard deviation over the 3D corrmatrix
+            cb = num.median(corrmatrix, axis=None)  # the median coherence over the 3D corrmatrix
+            
         f = open(self.output_path+'/'+'catalogue', 'a')
         f.write(event_t0s+'    '+str(late)+'   '+str(lone)+'   '+str(zb)+'   '+str(errmax)+'   '+str(cb)+'   '+str(cmax)+'\n')
         f.close()
