@@ -3,6 +3,7 @@ import numpy as num
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import datetime
+import copy
 #
 from loki import traveltimes
 from loki import waveforms
@@ -95,6 +96,7 @@ class Loki:
             tp_modse, ts_modse = sobj.time_extractor(tp, ts)  # traveltime table in second
             tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat, tp_modse, ts_modse, npr)  # traveltime table in time point, for each imaging point traveltimes have substracted the minimal P traveltime
 
+            cmax_pre = -1.0
             for i in range(ntrial):
                 if STALTA:
                     # need to calculate STA/LTA from the characteristic funtion
@@ -121,7 +123,10 @@ class Loki:
                 xloc = tobj.x[ixloc]
                 yloc = tobj.y[iyloc]
                 zloc = tobj.z[izloc]
-                out_file = open(self.output_path+'/'+event+'/'+event_t0s+'.loc', 'a')
+                if ntrial > 1:
+                    out_file = open(self.output_path+'/'+event+'/'+event+'.loc', 'a')
+                else:
+                    out_file = open(self.output_path+'/'+event+'/'+event_t0s+'.loc', 'a')
                 if STALTA:
                     out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 else:
@@ -129,15 +134,18 @@ class Loki:
                 out_file.close()
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
+                if cmax > cmax_pre:
+                    event_t0s_final = copy.deepcopy(event_t0s)
+                    cmax_pre = copy.deepcopy(cmax)
             
-            self.catalogue_creation(event, event_t0s, tobj.lat0, tobj.lon0, ntrial, corrmatrix)
+            self.catalogue_creation(event, event_t0s_final, tobj.lat0, tobj.lon0, ntrial, corrmatrix)
         print('Location process completed!!!')
 
     def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, corrmatrix, refell=23):
         (zorig, eorig, norig) = LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
-        ev_file = self.output_path+'/'+event+'/'+event_t0s+'.loc'
-        data = num.loadtxt(ev_file)
         if (ntrial > 1):
+            ev_file = self.output_path+'/'+event+'/'+event+'.loc'
+            data = num.loadtxt(ev_file)
             w = num.sum(data[:, 4])
             xb = ((num.dot(data[:, 1], data[:, 4])/w)*1000)+eorig
             yb = ((num.dot(data[:, 2], data[:, 4])/w)*1000)+norig
@@ -149,6 +157,8 @@ class Loki:
             err = num.cov(merr)
             errmax = num.sqrt(num.max(num.linalg.eigvals(err)))
         else:
+            ev_file = self.output_path+'/'+event+'/'+event_t0s+'.loc'
+            data = num.loadtxt(ev_file)
             late, lone = LatLongUTMconversion.UTMtoLL(refell, (data[2]*1000)+norig, (data[1]*1000)+eorig, zorig)  # latitude, longitude
             zb = data[3]  # depth in km
             cmax = data[4]  # the maximum coherence over the 3D corrmatrix
