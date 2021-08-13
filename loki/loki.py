@@ -71,6 +71,10 @@ class Loki:
             
         npr = inputs['npr']
         model = inputs['model']
+        if 'freq' in inputs:
+            freq = inputs['freq']
+        else:
+            freq = None  # no filtering
         
         # load traveltime data set
         tobj = traveltimes.Traveltimes(self.db_path, self.hdr_filename)
@@ -78,7 +82,7 @@ class Loki:
         ts = tobj.load_traveltimes('S', model, precision)
 
         for event_path in self.data_tree:
-            wobj = waveforms.Waveforms(event_path, extension, comp)
+            wobj = waveforms.Waveforms(event_path, extension, comp, freq)
             sobj = stacktraces.Stacktraces(tobj, wobj, **inputs)
             event = sobj.evid
 

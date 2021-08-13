@@ -5,11 +5,11 @@ from datetime import datetime
 
 class Waveforms:
 
-    def __init__(self, event_path, extension='*', comps=['E','N','Z']):
+    def __init__(self, event_path, extension='*', comps=['E','N','Z'], freq=None):
         if not os.path.isdir(event_path):
             raise ValueError('Error: data path does not exist')
         try:
-            self.load_waveforms(event_path, extension, comps)
+            self.load_waveforms(event_path, extension, comps, freq)
         except:
             raise WaveformLoadingError('Error: data not read for the event: %s' %(event_path))
         self.station_list()
@@ -22,13 +22,18 @@ class Waveforms:
                     data_stalist.append(sta)
         self.data_stations=set(data_stalist)
 
-    def load_waveforms(self, event_path, extension, comps):
+    def load_waveforms(self, event_path, extension, comps, freq):
         files=os.path.join(event_path,extension)
         traces=read(files)
-        #traces.detrend('demean')
-        #traces.detrend('linear')
-        #traces.filter("highpass", freq=1.0)
-        #traces.filter("bandpass", freqmin=1.0, freqmax=10.0)
+        
+        if freq:
+            traces.detrend('demean')
+            traces.detrend('linear')
+            if len(freq) == 1:
+                traces.filter("highpass", freq=freq[0])
+            elif len(freq) == 2:
+                traces.filter("bandpass", freqmin=freq[0], freqmax=freq[1])
+        
         self.stream={}
         for comp in comps:
             self.stream[comp]={}
