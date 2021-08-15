@@ -26,6 +26,11 @@ class Stacktraces:
             else:
                 normalize = False
             self.loki_input(wobj, tobj, derivative=False, direct_input=True, normalize=normalize)
+            
+            # compute array element wise power over the input probabilities if needed
+            if 'ppower' in inputs:
+                self.obs_dataV = self.obs_dataV**inputs['ppower']
+                self.obs_dataH = self.obs_dataH**inputs['ppower']
 
 
     def check_sampling_rate(self,wobj):
