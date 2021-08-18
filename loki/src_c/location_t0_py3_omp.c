@@ -144,14 +144,14 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
     int ip, is;
     double stk0p, stk0s, stkmax, corrmax;
     iter=0;
-    corrmax=0.;
+    corrmax=-1.0;
     omp_set_num_threads(nproc);
 
     printf(" Location process complete at : %3d %%",0);
     #pragma omp parallel for shared(iter,corrmax,iloc,itime) private(ip,is,stkmax,stk0p,stk0s,kmax,k,j)
     for(i=0;i<nxyz;i++){
        printf("\b\b\b\b\b%3ld %%", (100*iter++)/(nxyz-2));
-       stkmax=0.;
+       stkmax=-1.0;
 	   kmax=0;
        for(k=0;k<nsamples;k++){
            stk0p=0.;
