@@ -4,14 +4,15 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import datetime
 import copy
+from loki import ioformatting
 #
 from loki import traveltimes
 from loki import waveforms
 from loki import stacktraces
 from loki import LatLongUTMconversion
-import tt_processing                    # C
-import location_t0                         # C
-#import location_t0_plus                         # C
+import tt_processing                       # C
+import location_t0                         # C  for multiplying the P- and S-stacking values using this
+#import location_t0_plus                   # C  for adding the P- and S-stacking values using this
 
 
 class Loki:
@@ -77,6 +78,11 @@ class Loki:
             freq = inputs['freq']
         else:
             freq = None  # no filtering
+        if 'opsf' in inputs:
+            opsf = inputs['opsf']
+        else:
+            opsf = False
+        
         
         # load traveltime data set
         tobj = traveltimes.Traveltimes(self.db_path, self.hdr_filename)
@@ -110,6 +116,18 @@ class Loki:
                     # directly stack the characteristic function for imaging
                     obs_dataP = sobj.obs_dataV  # vertical -> P
                     obs_dataS = sobj.obs_dataH  # horizontal -> S
+
+                if opsf:
+                    # output the characteristic functions for stacking
+                    datainfo = {}
+                    datainfo['dt'] = sobj.deltat
+                    datainfo['starttime'] = sobj.dtime_max
+                    for ista, sta in enumerate(sobj.stations):
+                        datainfo['station_name'] = sta
+                        datainfo['channel_name'] = 'CFP'  # note maximum three characters, the last one must be 'P'
+                        ioformatting.vector2trace(datainfo, obs_dataP[ista,:], self.output_path+'/'+event+'/cf/trial{}'.format(i))
+                        datainfo['channel_name'] = 'CFS'  # note maximum three characters, the last one must be 'S'
+                        ioformatting.vector2trace(datainfo, obs_dataS[ista,:], self.output_path+'/'+event+'/cf/trial{}'.format(i))
 
                 iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 evtpmin = num.amin(tp_modse[iloctime[0],:])
