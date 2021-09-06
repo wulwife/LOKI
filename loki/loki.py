@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import datetime
 import copy
+import gc
 from loki import ioformatting
 #
 from loki import traveltimes
@@ -159,6 +160,7 @@ class Loki:
             
             self.catalogue_creation(event, event_t0s_final, tobj.lat0, tobj.lon0, ntrial, corrmatrix)
         print('Location process completed!!!')
+        gc.collect()
 
     def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, corrmatrix, refell=23):
         (zorig, eorig, norig) = LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
