@@ -97,7 +97,7 @@ class Stacktraces:
                 # normalize data only if the absolute maxima is largar than a 
                 # certain input threshold
                 trmax = num.max(num.abs(tr[i,:]))
-                if trmax > normalize:
+                if trmax >= normalize:
                     tr[i,:]=tr[i,:]/trmax
             elif normalize:
                 # normalize data by the absolute data maxima
