@@ -299,7 +299,7 @@ class Loki:
         """
         
         ofile = open(fname, 'a')
-        ofile.write('# t0    P_arrivaltime    S_arrivaltime \n')
+        ofile.write('# station    P_arrivaltime        S_arrivaltime \n')
         
         for ii, sta in enumerate(stations):
             # loop over each station to output the theoretical arrival-times for the P- and S-phases
