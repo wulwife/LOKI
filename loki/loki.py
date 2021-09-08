@@ -164,7 +164,7 @@ class Loki:
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
             
                 # output theoretical P- and S-wave arrivaltimes
-                fname = cmfilename + '.phs'
+                fname = cmfilename + '_trial{}.phs'.format(i)
                 self.write_phasetime(sobj.stations, event_t0, tp_modse, ts_modse, iloctime[0], fname)
                 
                 if cmax > cmax_pre:
@@ -272,7 +272,7 @@ class Loki:
         plt.close("all")
         
     
-    def write_phasetime(stations, event_t0, tp_modse, ts_modse, grididx, fname):
+    def write_phasetime(self, stations, event_t0, tp_modse, ts_modse, grididx, fname):
         """
         Calculate the theoretical arrival-times of P- and S-phases for the located
         event and output to a text file.
