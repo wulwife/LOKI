@@ -102,7 +102,7 @@ class Loki:
                 os.mkdir(self.output_path+'/'+event)
 
             tp_modse, ts_modse = sobj.time_extractor(tp, ts)  # traveltime table in second
-            tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat, tp_modse, ts_modse, npr)  # traveltime table in time point, for each imaging point traveltimes have substracted the minimal P traveltime
+            tp_mod, ts_mod = tt_processing.tt_f2i(sobj.deltat, tp_modse, ts_modse, npr)  # traveltime table in time sample, for each imaging point traveltimes have substracted the minimal P traveltime
 
             cmax_pre = -1.0
             for i in range(ntrial):
@@ -130,7 +130,7 @@ class Loki:
                         datainfo['channel_name'] = 'CFS'  # note maximum three characters, the last one must be 'S'
                         ioformatting.vector2trace(datainfo, obs_dataS[ista,:], self.output_path+'/'+event+'/cf/trial{}'.format(i))
 
-                iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
+                iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)  # iloctime[0]: the grid index of the maximum stacking point; iloctime[1]: the time index at the maximum stacking point
                 evtpmin = num.amin(tp_modse[iloctime[0],:])
                 event_t0 = sobj.dtime_max + datetime.timedelta(seconds=iloctime[1]*sobj.deltat) - datetime.timedelta(seconds=evtpmin)  # event origin time
                 event_t0s = (event_t0).isoformat()
@@ -139,21 +139,34 @@ class Loki:
                 # value during this calculation time period
                 cmax = num.max(corrmatrix)
                 corrmatrix = num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
-                (ixloc, iyloc, izloc) = num.unravel_index(num.argmax(corrmatrix),(tobj.nx,tobj.ny,tobj.nz))
+                assert(num.argmax(corrmatrix) == iloctime[0])  # should be the same
+                (ixloc, iyloc, izloc) = num.unravel_index(iloctime[0],(tobj.nx,tobj.ny,tobj.nz))
                 xloc = tobj.x[ixloc]
                 yloc = tobj.y[iyloc]
                 zloc = tobj.z[izloc]
+                
+                # output the current location result
                 if ntrial > 1:
-                    out_file = open(self.output_path+'/'+event+'/'+event+'.loc', 'a')
+                    cmfilename = self.output_path+'/'+event+'/'+event
                 else:
-                    out_file = open(self.output_path+'/'+event+'/'+event_t0s+'.loc', 'a')
+                    cmfilename = self.output_path+'/'+event+'/'+event_t0s
+                out_file = open(cmfilename+'.loc', 'a')
                 if STALTA:
                     out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+' '+str(nshort_p)+' '+str(nshort_s)+' '+str(slrat)+'\n')
                 else:
                     out_file.write(str(i)+' '+str(xloc)+' '+str(yloc)+' '+str(zloc)+' '+str(cmax)+'\n')
                 out_file.close()
+                
+                # save the stacked coherence matrix
                 num.save(self.output_path+'/'+event+'/'+'corrmatrix_trial_'+str(i),corrmatrix)
+                
+                # plot migration profiles
                 self.coherence_plot(self.output_path+'/'+event, corrmatrix, tobj.x, tobj.y, tobj.z, i)
+            
+                # output theoretical P- and S-wave arrivaltimes
+                fname = cmfilename + '.phs'
+                self.write_phasetime(sobj.stations, event_t0, tp_modse, ts_modse, iloctime[0], fname)
+                
                 if cmax > cmax_pre:
                     event_t0s_final = copy.deepcopy(event_t0s)
                     cmax_pre = copy.deepcopy(cmax)
@@ -257,3 +270,45 @@ class Loki:
         ax.set_aspect('equal')
         plt.savefig(event_path+'/'+'Coherence_matrix_yz'+str(itrial)+'.eps')
         plt.close("all")
+        
+    
+    def write_phasetime(stations, event_t0, tp_modse, ts_modse, grididx, fname):
+        """
+        Calculate the theoretical arrival-times of P- and S-phases for the located
+        event and output to a text file.
+
+        Parameters
+        ----------
+        stations : list of str
+            station names.
+        event_t0 : datetime
+            event origin time.
+        tp_modse : numpy array, shape: n_stations*n_grids
+            P-wave traveltime table in second.
+        ts_modse : numpy array, shape: n_stations*n_grids
+            S-wave traveltime table in second.
+        grididx : int
+            grid index where the seismic event is located.
+        fname : str
+            output filename including path.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        ofile = open(fname, 'a')
+        ofile.write('# t0    P_arrivaltime    S_arrivaltime \n')
+        
+        for ii, sta in enumerate(stations):
+            # loop over each station to output the theoretical arrival-times for the P- and S-phases
+            tp_tavt = event_t0 + datetime.timedelta(seconds=tp_modse[grididx,ii])  # P_arrival-time = event_origin_time + P_traveltime
+            ts_tavt = event_t0 + datetime.timedelta(seconds=ts_modse[grididx,ii])  # S_arrival-time = event_origin_time + S_traveltime
+            ofile.write(sta+' '+tp_tavt.isoformat()+' '+ts_tavt.isoformat()+'\n')
+            ofile.flush()
+            
+        ofile.close()        
+        
+        return
+
