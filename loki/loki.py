@@ -93,7 +93,8 @@ class Loki:
         for event_path in self.data_tree:
             wobj = waveforms.Waveforms(event_path, extension, comp, freq)
             sobj = stacktraces.Stacktraces(tobj, wobj, **inputs)
-            event = sobj.evid
+            # event = sobj.evid
+            event = event_path.split('/')[-1]
 
             print('Processing to the event folder: ', event_path, event)
             if os.path.isdir(self.output_path+'/'+event):
