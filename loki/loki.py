@@ -140,7 +140,6 @@ class Loki:
                 # value during this calculation time period
                 cmax = num.max(corrmatrix)
                 corrmatrix = num.reshape(corrmatrix,(tobj.nx,tobj.ny,tobj.nz))
-                assert(num.argmax(corrmatrix) == iloctime[0])  # should be the same
                 (ixloc, iyloc, izloc) = num.unravel_index(iloctime[0],(tobj.nx,tobj.ny,tobj.nz))
                 xloc = tobj.x[ixloc]
                 yloc = tobj.y[iyloc]
