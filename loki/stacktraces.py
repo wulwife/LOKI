@@ -101,7 +101,8 @@ class Stacktraces:
                     tr[i,:]=tr[i,:]/trmax
             elif normalize:
                 # normalize data by the absolute data maxima
-                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
+                if num.max(num.abs(tr[i,:])) > 0:
+                    tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
                 
         return tr
 
