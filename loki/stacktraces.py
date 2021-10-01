@@ -141,14 +141,17 @@ class Stacktraces:
         if ergz:
             obs_dataV=(self.ztr**2)
             for i in range(self.nstation):
-                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                if num.max(obs_dataV[i,:]) > 0:
+                    obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
             self.obs_dataV=obs_dataV
         else:
             obs_dataV=(self.ztr**2)
             obs_dataH=(self.xtr**2)+(self.ytr**2)
             for i in range(self.nstation):
-                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
-                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                if abs(num.max(obs_dataH[i,:])) > 0:
+                    obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
+                if abs(num.max(obs_dataV[i,:])) > 0:
+                    obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
             self.obs_dataH=obs_dataH
             self.obs_dataV=obs_dataV
 
@@ -167,8 +170,11 @@ class Stacktraces:
                 U3d, s3d, V3d = num.linalg.svd(cov3d, full_matrices=True)
                 obs_dataV[i,j]=(s3d[0]**2)*(num.abs(V3d[0][2]))
                 obs_dataH[i,j]=(s2d[0]**2)*(1-num.abs(V3d[0][2]))
-            obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
-            obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                
+            if abs(num.max(obs_dataH[i,:])) > 0:
+                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
+            if abs(num.max(obs_dataV[i,:])) > 0:
+                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
         self.obs_dataH=obs_dataH
         self.obs_dataV=obs_dataV
 
@@ -186,7 +192,9 @@ class Stacktraces:
                 cov=num.array([[xx[i,j], xy[i,j]],[yx[i,j], yy[i,j]]])
                 U, s, V = num.linalg.svd(cov, full_matrices=True)
                 obs_dataH[i,j]=(s[0]**2)
-            obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
+                
+            if abs(num.max(obs_dataH[i,:])) > 0:
+                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
         self.obs_dataH=obs_dataH
 
 
