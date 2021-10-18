@@ -62,8 +62,8 @@ static PyObject *py_tt_f2i(PyObject *self, PyObject *args){
    }
 
    /* find the dimension of tp */
-   nsta=dims[0]=(long int) PyArray_DIM(tp, 0);
-   nxyz=dims[1]=(long int) PyArray_DIM(tp, 1);
+   nxyz=dims[0]=(long int) PyArray_DIM(tp, 0);
+   nsta=dims[1]=(long int) PyArray_DIM(tp, 1);
 
    itp=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_INT);
    its=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_INT);
@@ -133,8 +133,8 @@ int tt_f2i(double dt, long int nxyz, long int nsta, double tp[nxyz][nsta], doubl
        }
 
        for(j=0;j<nsta;j++){
-           itp[i][j]=(int) round((tp[i][j]-tpmin)/dt);
-           its[i][j]=(int) round((ts[i][j]-tpmin)/dt);
+           itp[i][j]=(int) lround((tp[i][j]-tpmin)/dt);
+           its[i][j]=(int) lround((ts[i][j]-tpmin)/dt);
        }
     }
     return 0;

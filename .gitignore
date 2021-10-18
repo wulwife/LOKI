@@ -4,3 +4,5 @@ __pycache__/
 *.log
 *.pkl
 .idea
+tests/Test_dataset/output/
+.gitignore

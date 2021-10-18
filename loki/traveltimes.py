@@ -152,8 +152,8 @@ class Traveltimes:
         return None
 
     def event_indexes(self,evlat,evlon,evdepth):
-        zonei,xi,yi=latlon.LLtoUTM(23,evlat,evlon)
-        zorig,xorig,yorig=latlon.LLtoUTM(23,self.lat0,self.lon0)
+        zonei,xi,yi=ll.LLtoUTM(23,evlat,evlon)
+        zorig,xorig,yorig=ll.LLtoUTM(23,self.lat0,self.lon0)
         zi=evdepth*km
         x0=xorig+self.x0*km; y0=yorig+self.y0*km; z0=0.0+self.z0*km
         d_spac=self.dx*km

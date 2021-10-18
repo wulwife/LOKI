@@ -119,17 +119,17 @@ static PyMethodDef module_methods[]={
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef modlocation_t0 = {
+static struct PyModuleDef modlocation_t0_plus = {
        PyModuleDef_HEAD_INIT,
-       "location_t0",
+       "location_t0_plus",
        module_docstring,
        -1,
        module_methods
 };
 
-PyMODINIT_FUNC PyInit_location_t0(void){
+PyMODINIT_FUNC PyInit_location_t0_plus(void){
     PyObject *m;
-    m = PyModule_Create(&modlocation_t0);
+    m = PyModule_Create(&modlocation_t0_plus);
     if (m==NULL)
        return NULL;
     import_array();
@@ -168,12 +168,12 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
                     stk0s=0. + stk0s;
                  }
            }
-					 if (stk0p*stk0s>stkmax){
-						  stkmax=stk0p*stk0s;
+					 if (stk0p+stk0s>stkmax){
+						  stkmax=stk0p+stk0s;
 							kmax=k;
 					 }
        }
-       corrmatrix[i]=sqrt(stkmax)/((float) nsta);
+       corrmatrix[i]=stkmax/((float) 2*nsta);
        #pragma omp critical
        if (corrmatrix[i]>corrmax){
           corrmax=corrmatrix[i];

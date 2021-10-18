@@ -7,18 +7,31 @@ class Stacktraces:
 
     def __init__(self, tobj, wobj, **inputs):
         #check input objects tobj=traveltime_object wobj=Raw_waveform_object
-        if 'derivative' in inputs.keys():
-            derivative=inputs['derivative']
-        if 'vfunc' in inputs.keys():
-            vfunc=inputs['vfunc']
-        if 'hfunc' in inputs.keys():
-            hfunc=inputs['hfunc']
-        if 'epsilon' in inputs.keys():
-            epsilon=inputs['epsilon']
         self.check_sampling_rate(wobj)
         self.check_starting_time(wobj)
-        self.loki_input(wobj, tobj, derivative)
-        self.characteristic_function(vfunc,hfunc,epsilon)
+        
+        if ('vfunc' in inputs) or ('hfunc' in inputs):
+            # need to calculate characteristic functions from input data
+            vfunc=inputs['vfunc']
+            hfunc=inputs['hfunc']
+            epsilon=inputs['epsilon']
+            derivative=inputs['derivative']
+            self.loki_input(wobj, tobj, derivative)
+            self.characteristic_function(vfunc, hfunc, epsilon)
+        else:
+            # no need to calculate characteristic function from input data
+            # directly input data of P and S component
+            if 'normthrd' in inputs:
+                normalize = inputs['normthrd']
+            else:
+                normalize = False
+            self.loki_input(wobj, tobj, derivative=False, direct_input=True, normalize=normalize)
+            
+            # compute array element wise power over the input probabilities if needed
+            if 'ppower' in inputs:
+                self.obs_dataV = self.obs_dataV**inputs['ppower']
+                self.obs_dataH = self.obs_dataH**inputs['ppower']
+
 
     def check_sampling_rate(self,wobj):
         intsamp=1E6
@@ -33,8 +46,8 @@ class Stacktraces:
         else:
             raise ValueError('Error!! All trace must have the same sampling rate')
 
+
     def check_starting_time(self,wobj):
-        intsamp=1E6
         dtimes=[]
         self.ns=0
         for comp in (wobj.stream).keys():
@@ -46,20 +59,27 @@ class Stacktraces:
         self.evid=(self.dtime_max).isoformat()
 
 
-    def loki_input(self, wobj, tobj, derivative=True):
-        self.comp=tuple((wobj.stream).keys())
-        if len(self.comp)==3:
-            self.xtr=self.select_data(self.comp[0], wobj, tobj.db_stations, derivative)
-            self.ytr=self.select_data(self.comp[1], wobj, tobj.db_stations, derivative)
-            self.ztr=self.select_data(self.comp[2], wobj, tobj.db_stations, derivative)
-        elif len(self.comp)==1:
-            self.ztr=self.select_data(comp, wobj.data_stations, db_stations, derivative)
+    def loki_input(self, wobj, tobj, derivative, direct_input=False, normalize=True):
+        if direct_input:
+            # directly use input data as characteristic function
+            self.obs_dataV = self.select_data('P', wobj, tobj.db_stations, derivative, normalize)
+            self.obs_dataH = self.select_data('S', wobj, tobj.db_stations, derivative, normalize)
         else:
-            raise ValueError('Traces must have 1 or 3 components!')
+            # normal input, input 1- or 3-component data for calculating characteristic
+            # function later
+            self.comp=tuple((wobj.stream).keys())
+            if len(self.comp)==3:
+                self.xtr=self.select_data(self.comp[0], wobj, tobj.db_stations, derivative, normalize)
+                self.ytr=self.select_data(self.comp[1], wobj, tobj.db_stations, derivative, normalize)
+                self.ztr=self.select_data(self.comp[2], wobj, tobj.db_stations, derivative, normalize)
+            elif len(self.comp)==1:
+                self.ztr=self.select_data(self.comp[0], wobj, tobj.db_stations, derivative, normalize)
+            else:
+                raise ValueError('Traces must have 1 or 3 components!')
 
 
-    def select_data(self, comp, wobj, db_stations, derivative):
-        self.stations=tuple(wobj.data_stations & db_stations)
+    def select_data(self, comp, wobj, db_stations, derivative, normalize):
+        self.stations=tuple(wobj.data_stations & db_stations)  # find stations that are in common
         self.nstation=num.size(self.stations)
         tr=num.zeros([self.nstation,self.ns])
         stream=wobj.stream[comp]
@@ -67,12 +87,23 @@ class Stacktraces:
             nstr=num.size(stream[sta][2])
             idt=num.int((self.dtime_max-stream[sta][0]).total_seconds()/self.deltat)
             tr[i,0:nstr-idt]=stream[sta][2][idt:]
+            
             if derivative:
+                # calculate derivatives of input data
                 tr[i,1:self.ns]=((tr[i,1:]-tr[i,0:self.ns-1])/self.deltat)
                 tr[i,0]=0.
-                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
-            else:
-                tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
+            
+            if isinstance(normalize, float):
+                # normalize data only if the absolute maxima is largar than a 
+                # certain input threshold
+                trmax = num.max(num.abs(tr[i,:]))
+                if trmax >= normalize:
+                    tr[i,:]=tr[i,:]/trmax
+            elif normalize:
+                # normalize data by the absolute data maxima
+                if num.max(num.abs(tr[i,:])) > 0:
+                    tr[i,:]=tr[i,:]/num.max(num.abs(tr[i,:]))
+                
         return tr
 
     def analytic_signal(self, trace):
@@ -110,14 +141,17 @@ class Stacktraces:
         if ergz:
             obs_dataV=(self.ztr**2)
             for i in range(self.nstation):
-                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                if num.max(obs_dataV[i,:]) > 0:
+                    obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
             self.obs_dataV=obs_dataV
         else:
             obs_dataV=(self.ztr**2)
             obs_dataH=(self.xtr**2)+(self.ytr**2)
             for i in range(self.nstation):
-                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
-                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                if abs(num.max(obs_dataH[i,:])) > 0:
+                    obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))
+                if abs(num.max(obs_dataV[i,:])) > 0:
+                    obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
             self.obs_dataH=obs_dataH
             self.obs_dataV=obs_dataV
 
@@ -136,8 +170,11 @@ class Stacktraces:
                 U3d, s3d, V3d = num.linalg.svd(cov3d, full_matrices=True)
                 obs_dataV[i,j]=(s3d[0]**2)*(num.abs(V3d[0][2]))
                 obs_dataH[i,j]=(s2d[0]**2)*(1-num.abs(V3d[0][2]))
-            obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
-            obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
+                
+            if abs(num.max(obs_dataH[i,:])) > 0:
+                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
+            if abs(num.max(obs_dataV[i,:])) > 0:
+                obs_dataV[i,:]=(obs_dataV[i,:]/num.max(obs_dataV[i,:]))
         self.obs_dataH=obs_dataH
         self.obs_dataV=obs_dataV
 
@@ -155,7 +192,9 @@ class Stacktraces:
                 cov=num.array([[xx[i,j], xy[i,j]],[yx[i,j], yy[i,j]]])
                 U, s, V = num.linalg.svd(cov, full_matrices=True)
                 obs_dataH[i,j]=(s[0]**2)
-            obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
+                
+            if abs(num.max(obs_dataH[i,:])) > 0:
+                obs_dataH[i,:]=(obs_dataH[i,:]/num.max(obs_dataH[i,:]))+epsilon
         self.obs_dataH=obs_dataH
 
 
