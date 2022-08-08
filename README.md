@@ -92,7 +92,7 @@ Copyright(C) 2013 Francesco Grigoli
 
 Author: Francesco Grigoli
 
-Mail: <fsco.grigoli@gmail.com> or <francesco.grigoli@sed.ethz.ch>
+Mail: <fsco.grigoli@gmail.com> or <francesco.grigoli@unipi.it>
 
 
 This program is distributed in the hope that it will be useful,
