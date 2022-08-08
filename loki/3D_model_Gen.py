@@ -4,6 +4,10 @@ import numpy as num
 import pylab as plt
 
 
+
+
+
+
 def conversion(latmin, latmax, lonmin, lonmax, border, spacing, filename):
     zone,xmin,ymin=ll.LLtoUTM(23,latmin,lonmin)
     zone,xmax,ymax=ll.LLtoUTM(23,latmax,lonmax)
@@ -41,6 +45,8 @@ latsta=-21.33533333; lonsta=55.794
 zone,xsta,ysta=ll.LLtoUTM(23,latsta,lonsta)
 ix=int((xsta-xmin)/spacing)
 iy=int((ysta-ymin)/spacing)
+
+
 
 
 
@@ -142,3 +148,15 @@ plt.figure()
 plt.imshow(num.transpose(models[75,:,:]))
 plt.colorbar()
 plt.show()
+
+
+def model3d_gen(model_path,filename,velmod,spacing):
+    ''' velocity model input for Grid2Time '''
+    nx,ny,nz=num.shape(velmod)
+    model=(1./velmod)*spacing
+    f=open(filename+'.mod.buf','wb')
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                f.write(model[i,j,k])
+    f.close()

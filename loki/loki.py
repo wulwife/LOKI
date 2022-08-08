@@ -241,7 +241,7 @@ class Loki:
         fig = plt.figure()
         fig.suptitle('Coherence matrix X-Y', fontsize=14, fontweight='bold')
         ax = fig.gca()
-        cmap = plt.cm.get_cmap('jet', 100)
+        cmap = plt.cm.get_cmap('viridis', 100)
         cs = plt.contourf(xax, yax, CXY, 20, cmap=cmap, interpolation='bilinear', norm=nrm)
         ax.set_xlabel('X (km)')
         ax.set_ylabel('Y (km)')
