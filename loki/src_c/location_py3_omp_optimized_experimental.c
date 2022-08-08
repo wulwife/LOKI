@@ -129,7 +129,7 @@ PyMODINIT_FUNC PyInit_location(void){
 
 
 int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], double corrmatrix[nxyz], int nproc){
-
+int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], double corrmatrix[nxyz][nsamples], int nproc)
     long int iter, i, j, k;
     int ip, is;
     double stk0p, stk0s, stkmax;
@@ -174,7 +174,6 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
    scale_by = 1. / (float) nsta;
    int itp_at_one_location[nsamples];
    double corr_at_one_location[nsamples];
-   // data scale... 50 hz samples at 20 sec  1000 samples.  1000000 nxyz, 10
    iter=0;
 
    omp_set_num_threads(nproc);
@@ -189,17 +188,17 @@ int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta
 
       for(k=0 ; k<nsamples ; ++k){ //using ++x instaead of x++ for atomic operation. This may make absolutely no difference.
           stk0p=0.;
-					stk0s=0.;
+			 stk0s=0.;
           for(j=0 ; j<nsta ; ++j){ //using ++x instaead of x++ for atomic operation. This may make absolutely no difference.
              ip=itp_at_one_location[j] + k;
              if (is<nsamples){ //if there is some way this can be known ahead of time, then the "if" can be eliminated, allowing for (possibly) better optimization by compiler
                stk0p=stalta_p[j][ip] + stk0p;
-							 stk0s=stalta_s[j][ip] + stk0s;
+					stk0s=stalta_s[j][is] + stk0s;
              }
-						 else {
-								stk0p=0. + stk0p;
-								stk0s=0. + stk0s;
-						 }
+				 else {
+					stk0p=0. + stk0p;
+					stk0s=0. + stk0s;
+						}
           }
           corr_at_one_location[k]=stk0p * stk0s * scale_by; // multiplication is possibly less expensive than division. over 1M ops, it might make a difference
       }
