@@ -18,7 +18,6 @@ import sys
 import numpy as num
 import loki.latlon2cart as ll2c
 
-
 class Traveltimes:
 
     def __init__(self, db_path, hdr_filename):
@@ -153,6 +152,7 @@ class Traveltimes:
         return None
 
     def event_indexes(self,evlat,evlon,evdepth):
+        km=1000.
         latref=self.lat0; lonref=-self.lon0; eleref=0.
         origin=ll2c.Coordinates(latref,lonref,eleref)
         xi,yi,ui = origin.geo2cart(evlat,evlon,eleref)
