@@ -10,7 +10,7 @@ from loki import ioformatting
 from loki import traveltimes
 from loki import waveforms
 from loki import stacktraces
-from loki import LatLongUTMconversion
+from loki import latlon2cart
 import tt_processing                       # C
 import location_t0                         # C  for multiplying the P- and S-stacking values using this
 #import location_t0_plus                   # C  for adding the P- and S-stacking values using this
@@ -176,14 +176,15 @@ class Loki:
         gc.collect()
 
     def catalogue_creation(self, event, event_t0s, lat0, lon0, ntrial, corrmatrix, refell=23):
-        (zorig, eorig, norig) = LatLongUTMconversion.LLtoUTM(refell, lat0, lon0) #da adeguare in python 3
+        latref=lat0; lonref=lon0; eleref=0.
+        origin=latlon2cart.Coordinates(latref,lonref,eleref)
         if (ntrial > 1):
             ev_file = self.output_path+'/'+event+'/'+event+'.loc'
             data = num.loadtxt(ev_file)
             w = num.sum(data[:, 4])
-            xb = ((num.dot(data[:, 1], data[:, 4])/w)*1000)+eorig
-            yb = ((num.dot(data[:, 2], data[:, 4])/w)*1000)+norig
-            late, lone = LatLongUTMconversion.UTMtoLL(refell, yb, xb, zorig)
+            xb = ((num.dot(data[:, 1], data[:, 4])/w)*1000)
+            yb = ((num.dot(data[:, 2], data[:, 4])/w)*1000)
+            late,lone,elev=origin.cart2geo(xb,yb,eleref)
             zb = num.dot(data[:, 3], data[:, 4])/w  # depth in km
             cb = num.mean(data[:, 4])  # the mean coherence over the ntrial realizations
             cmax = num.max(data[:, 4])  # the maximum coherence over the ntrial realizations
@@ -193,8 +194,10 @@ class Loki:
         else:
             ev_file = self.output_path+'/'+event+'/'+event_t0s+'.loc'
             data = num.loadtxt(ev_file)
-            late, lone = LatLongUTMconversion.UTMtoLL(refell, (data[2]*1000)+norig, (data[1]*1000)+eorig, zorig)  # latitude, longitude
+            xb=data[1]*1000
+            yb=data[2]*1000
             zb = data[3]  # depth in km
+            late,lone,elev=origin.cart2geo(xb,yb,eleref) # latitude, longitude
             cmax = data[4]  # the maximum coherence over the 3D corrmatrix
             
             # nomalize corrmatrix first, let minimal->1, maximum->2

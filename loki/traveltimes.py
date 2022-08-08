@@ -16,7 +16,7 @@
 import os
 import sys
 import numpy as num
-import loki.LatLongUTMconversion as ll
+import loki.latlon2cart as ll2c
 
 
 class Traveltimes:
@@ -78,11 +78,12 @@ class Traveltimes:
         return t
 
     def ttdb_reduce(self,tt,l_lim,u_lim,zlim=[]):
-        (zorig,x_orig,y_orig)=ll.LLtoUTM(23, self.lat0, self.lon0)
-        (zorig,x_l,y_l)=ll.LLtoUTM(23, l_lim[0], l_lim[1])
-        (zorig,x_u,y_u)=ll.LLtoUTM(23, u_lim[0], u_lim[1])
-        x_l=(x_l-x_orig)/1000.; y_l=(y_l-y_orig)/1000.
-        x_u=(x_u-x_orig)/1000.; y_u=(y_u-y_orig)/1000.
+        latref=self.lat0; lonref=self.lon0; eleref=0.
+        origin=ll2c.Coordinates(latref,lonref,eleref)
+        x_l,y_l,u_l = origin.geo2cart(l_lim[0],l_lim[1],eleref)
+        x_u,y_u,u_u = origin.geo2cart(u_lim[0],u_lim[1],eleref)
+        x_l=x_l/1000.; y_l=y_l/1000.
+        x_u=x_u/1000.; y_u=y_u/1000.
         nx_ini=int((x_l-self.x0)/self.dx); ny_ini=int((y_l-self.y0)/self.dy)
         nx_fin=int((x_u-self.x0)/self.dx); ny_fin=int((y_u-self.y0)/self.dy)
         self.x0=x_l-self.x0; self.y0=y_l-self.y0
@@ -92,7 +93,7 @@ class Traveltimes:
            self.z0=zlim[0]
         else:
            nz_ini=0; nz_fin=self.nz
-        nx_new=nx_fin-nx_ini; ny_new=ny_fin-ny_ini; nz_new=nz_fin-nz_ini;
+        nx_new=nx_fin-nx_ini; ny_new=ny_fin-ny_ini; nz_new=nz_fin-nz_ini
         tt_new={}
         for key in tt.keys():
             t_arr=tt[key].reshape(self.nx,self.ny,self.nz)
@@ -152,10 +153,11 @@ class Traveltimes:
         return None
 
     def event_indexes(self,evlat,evlon,evdepth):
-        zonei,xi,yi=ll.LLtoUTM(23,evlat,evlon)
-        zorig,xorig,yorig=ll.LLtoUTM(23,self.lat0,self.lon0)
+        latref=self.lat0; lonref=-self.lon0; eleref=0.
+        origin=ll2c.Coordinates(latref,lonref,eleref)
+        xi,yi,ui = origin.geo2cart(evlat,evlon,eleref)
         zi=evdepth*km
-        x0=xorig+self.x0*km; y0=yorig+self.y0*km; z0=0.0+self.z0*km
+        x0=self.x0*km; y0=self.y0*km; z0=0.0+self.z0*km
         d_spac=self.dx*km
         ix=int(num.round((xi-x0)/d_spac)); iy=int(num.round((yi-y0)/d_spac)); iz=int(num.round((zi-z0)/d_spac))
         return ix,iy,iz
