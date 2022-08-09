@@ -6,7 +6,6 @@ import datetime
 import copy
 import gc
 from loki import ioformatting
-#
 from loki import traveltimes
 from loki import waveforms
 from loki import stacktraces
