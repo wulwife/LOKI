@@ -238,40 +238,46 @@ class Loki:
         else:
             nrm = None
 
-        fig = plt.figure()
-        fig.suptitle('Coherence matrix X-Y', fontsize=14, fontweight='bold')
-        ax = fig.gca()
-        cmap = plt.cm.get_cmap('viridis', 100)
-        cs = plt.contourf(xax, yax, CXY, 20, cmap=cmap, norm=nrm)
-        ax.set_xlabel('X (km)')
-        ax.set_ylabel('Y (km)')
-        cbar = plt.colorbar(cs)
-        ax.set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_xy'+str(itrial)+'.eps')
 
-        fig = plt.figure()
-        fig.suptitle('Coherence matrix X-Z', fontsize=14, fontweight='bold')
-        ax = fig.gca()
-        cmap = plt.cm.get_cmap('viridis', 100)
-        cs = plt.contourf(xax, zax, CXZ, 20, cmap=cmap, norm=nrm)
-        ax.set_xlabel('X (km)')
-        ax.set_ylabel('Z (km)')
-        cbar = plt.colorbar(cs)
-        ax.invert_yaxis()
-        ax.set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_xz'+str(itrial)+'.eps')
+        xticks=num.min(xax)+num.arange(6)*(num.max(xax)-num.min(xax))/5
+        yticks=num.min(yax)+num.arange(6)*(num.max(yax)-num.min(yax))/5
+        zticks=num.min(zax)+num.arange(6)*(num.max(zax)-num.min(zax))/5
 
-        fig = plt.figure()
-        fig.suptitle('Coherence matrix Y-Z', fontsize=14, fontweight='bold')
-        ax = fig.gca()
+        fig, axs = plt.subplots(1,3, figsize=(15, 7.5))
+        fig.suptitle('Coherence matrices trial '+str(itrial), fontsize=14, fontweight='bold')
         cmap = plt.cm.get_cmap('viridis', 100)
-        cs = plt.contourf(yax, zax, CYZ, 20, cmap=cmap, norm=nrm)
-        ax.set_xlabel('Y (km)')
-        ax.set_ylabel('Z (km)')
-        cbar = plt.colorbar(cs)
-        ax.invert_yaxis()
-        ax.set_aspect('equal')
-        plt.savefig(event_path+'/'+'Coherence_matrix_yz'+str(itrial)+'.eps')
+    
+        ax1 = axs[0]
+        cs1=ax1.contourf(xax, yax, CXY, 20, cmap=cmap, norm=nrm)
+        ax1.set_xticks(xticks)
+        ax1.set_yticks(yticks)
+        ax1.set_xlabel('X (km)')
+        ax1.set_ylabel('Y (km)')
+        ax1.set_aspect('equal')
+        
+        ax2 = axs[1]
+        cs2=ax2.contourf(yax, zax, CYZ, 20, cmap=cmap, norm=nrm)
+        ax2.set_xticks(yticks)
+        ax2.set_yticks(zticks)
+        ax2.set_xlabel('Y (km)')
+        ax2.set_ylabel('Z (km)')
+        ax2.set_aspect('equal')
+        ax2.invert_yaxis()
+
+        ax3 = axs[2]
+        cs3=ax3.contourf(xax, zax, CXZ, 20, cmap=cmap, norm=nrm)
+        ax3.set_xticks(xticks)
+        ax3.set_yticks(zticks)
+        ax3.set_xlabel('X (km)')
+        ax3.set_ylabel('Z (km)')
+        ax3.set_aspect('equal')
+        ax3.invert_yaxis()
+        
+
+        cbar=plt.colorbar(cs1, ax=axs, orientation='horizontal', shrink=0.6)
+        cbar.set_label('Coherence')
+
+        plt.savefig(event_path+'/'+'Coherence_matrix_'+str(itrial)+'.eps')
         plt.close("all")
         
     
