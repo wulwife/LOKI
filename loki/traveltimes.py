@@ -153,11 +153,11 @@ class Traveltimes:
 
     def event_indexes(self,evlat,evlon,evdepth):
         km=1000.
-        latref=self.lat0; lonref=-self.lon0; eleref=0.
+        latref=self.lat0; lonref=self.lon0; eleref=0.
         origin=ll2c.Coordinates(latref,lonref,eleref)
         xi,yi,ui = origin.geo2cart(evlat,evlon,eleref)
         zi=evdepth*km
-        x0=self.x0*km; y0=self.y0*km; z0=0.0+self.z0*km
+        x0=self.x0*km; y0=self.y0*km; z0=0.0+self.z0
         d_spac=self.dx*km
         ix=int(num.round((xi-x0)/d_spac)); iy=int(num.round((yi-y0)/d_spac)); iz=int(num.round((zi-z0)/d_spac))
         return ix,iy,iz
@@ -180,7 +180,7 @@ class Traveltimes:
                     tt[k]=dist/velocity
                 tt.tofile(fout)
                 fout.close()
-                print('Traveltimes computation for the station : ' + sta + 'completed! \n')
+                print('Traveltimes computation for the station : ' + sta + ' completed! \n')
         return None
 
     def apply_master_event_correction(self, phase, dt, label='layer', precision='single'):
