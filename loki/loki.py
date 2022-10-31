@@ -252,7 +252,7 @@ class Loki:
         ax1.set_yticks(yticks)
         ax1.set_xlabel('X (km)')
         ax1.set_ylabel('Y (km)')
-        ax1.set_aspect('equal')
+        ax1.set_aspect('auto')
         
         ax2 = axs[1]
         cs2=ax2.contourf(yax, zax, CYZ, 20, cmap=cmap, norm=nrm)
@@ -260,7 +260,7 @@ class Loki:
         ax2.set_yticks(zticks)
         ax2.set_xlabel('Y (km)')
         ax2.set_ylabel('Z (km)')
-        ax2.set_aspect('equal')
+        ax2.set_aspect('auto')
         ax2.invert_yaxis()
 
         ax3 = axs[2]
@@ -269,7 +269,7 @@ class Loki:
         ax3.set_yticks(zticks)
         ax3.set_xlabel('X (km)')
         ax3.set_ylabel('Z (km)')
-        ax3.set_aspect('equal')
+        ax3.set_aspect('auto')
         ax3.invert_yaxis()
         
 

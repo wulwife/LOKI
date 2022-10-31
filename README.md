@@ -28,9 +28,6 @@ To use LOKI you will need:
 
 - `GCC6` or later versions or any C compiler that supports OpenMP calls
 - Python3 libraries, `numpy` (needed also at installation stage) and `obspy`
-- Python3 library: `LatLonUTMconverter`, provided here but developed by third parts. (soon this dependence will be removed by adding an internal function)
- From `v1.0.0` the main module has been incorporated in loki (`from loki import LatLonUTMconverter`)
-
 
 The software now comes with an installer!  simply digit:
 
