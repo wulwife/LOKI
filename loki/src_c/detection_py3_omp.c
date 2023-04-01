@@ -14,46 +14,46 @@
 
 
 /* Prototypes */
-int stacking(long int nxyz, long int nsta, long int nsamples, long int noverlap, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], double corrmatrix[nxyz][noverlap], int nproc);
+int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], float corrmatrix[nxyz][nsamples], int nproc);
 /* Python wrapper of the C function stacking */
 
-static char module_docstring[]="Module for detection and location of seismic events P and S";
-static char stacking_docstring[]="Detection and location through waveform stacking";
+static char module_docstring[]="Module for computing of the location";
+static char stacking_docstring[]="location throug waveform stacking";
 
 
 /* wrapper */
 
 static PyObject *py_stacking(PyObject *self, PyObject *args){
    PyArrayObject *itp, *its, *stalta_p, *stalta_s, *corrmatrix;
-   long int nxyz, nsamples, nsta, noverlap, nproc;
+   long int nxyz, nsamples, nsta, nproc;
    npy_intp dims[2];
    /* checking the format of the arguments */
 
-   if(!PyArg_ParseTuple(args, "OOOOli", &itp, &its, &stalta_p, &stalta_s, &noverlap, &nproc)){
+   if(!PyArg_ParseTuple(args, "OOOOi", &itp, &its, &stalta_p, &stalta_s, &nproc)){
       PyErr_SetString(PyExc_RuntimeError, "Invalid arguments for the C function stacking");
-      return NULL;
+      return NULL; 
    }
 
    /* Checking the contiguity of the arrays */
 
    if(!PyArray_Check(stalta_p) || !PyArray_ISCONTIGUOUS(stalta_p)){
       PyErr_SetString(PyExc_RuntimeError, "stalta_p is not a contiguous array");
-      return NULL;
+      return NULL; 
    }
 
    if(!PyArray_Check(stalta_s) || !PyArray_ISCONTIGUOUS(stalta_s)){
       PyErr_SetString(PyExc_RuntimeError, "stalta_s is not a contiguous array");
-      return NULL;
+      return NULL; 
    }
 
    if(!PyArray_Check(itp) || !PyArray_ISCONTIGUOUS(itp)){
       PyErr_SetString(PyExc_RuntimeError, "tp is not a contiguous array");
-      return NULL;
+      return NULL; 
    }
 
    if(!PyArray_Check(its) || !PyArray_ISCONTIGUOUS(its)){
       PyErr_SetString(PyExc_RuntimeError, "ts is not a contiguous array");
-      return NULL;
+      return NULL; 
    }
 
 
@@ -62,41 +62,48 @@ static PyObject *py_stacking(PyObject *self, PyObject *args){
 
    if((PyArray_NDIM(stalta_p) != 2)){
       PyErr_SetString(PyExc_RuntimeError, "stalta_p is not a 2D array");
-      return NULL;
+      return NULL; 
    }
 
    if((PyArray_NDIM(stalta_s) != 2)){
       PyErr_SetString(PyExc_RuntimeError, "stalta_s is not a 2D array");
-      return NULL;
+      return NULL; 
    }
 
    if((PyArray_NDIM(itp) != 2)){
       PyErr_SetString(PyExc_RuntimeError, "tp is not a 2D array");
-      return NULL;
+      return NULL; 
    }
 
    if((PyArray_NDIM(its) != 2)){
       PyErr_SetString(PyExc_RuntimeError, "ts is not a 2D array");
-      return NULL;
+      return NULL; 
    }
 
    /* find the dimension of obs_data and stalta */
-   nsta=(long int) PyArray_DIM(stalta_p, 0);
+   nsta=(long int) PyArray_DIM(stalta_p, 0); 
    nsamples=(long int) PyArray_DIM(stalta_p, 1);
    nxyz=(long int) PyArray_DIM(itp, 0);
    dims[0] = nxyz;
-   dims[1] = noverlap;
-   corrmatrix=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+   dims[1] = nsamples;
+   corrmatrix=(PyArrayObject*) PyArray_SimpleNew(2, dims, NPY_FLOAT);
 
    /*call stacking */
-   if (0 != stacking(nxyz, nsta, nsamples, noverlap, PyArray_DATA(itp), PyArray_DATA(its), PyArray_DATA(stalta_p), PyArray_DATA(stalta_s), PyArray_DATA(corrmatrix), nproc)) {
+   if (0 != stacking(nxyz, nsta, nsamples, PyArray_DATA(itp), PyArray_DATA(its), PyArray_DATA(stalta_p), PyArray_DATA(stalta_s), PyArray_DATA(corrmatrix), nproc)) {
       PyErr_SetString(PyExc_RuntimeError, "running stacking failed.");
       return NULL;
    }
 
 
-   return PyArray_Return(corrmatrix);
+   
+   PyObject *corrmatrix_out=Py_BuildValue("O", corrmatrix);
 
+   Py_DECREF(corrmatrix);
+   return corrmatrix_out;
+
+
+   /*Py_INCREF(corrmatrix);
+   return PyArray_Return(corrmatrix);*/
 }
 
 
@@ -109,17 +116,17 @@ static PyMethodDef module_methods[]={
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef modps_detection = {
+static struct PyModuleDef moddetection = {
        PyModuleDef_HEAD_INIT,
-       "ps_detection",
+       "location",
        module_docstring,
        -1,
        module_methods
 };
 
-PyMODINIT_FUNC PyInit_ps_detection(void){
+PyMODINIT_FUNC PyInit_detection(void){
     PyObject *m;
-    m = PyModule_Create(&modps_detection);
+    m = PyModule_Create(&moddetection);
     if (m==NULL)
        return NULL;
     import_array();
@@ -127,33 +134,39 @@ PyMODINIT_FUNC PyInit_ps_detection(void){
 };
 
 
-int stacking(long int nxyz, long int nsta, long int nsamples, long int noverlap, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], double corrmatrix[nxyz][noverlap], int nproc){
 
-    long int i, j, k;
+int stacking(long int nxyz, long int nsta, long int nsamples, int itp[nxyz][nsta], int its[nxyz][nsta], double stalta_p[nsta][nsamples], double stalta_s[nsta][nsamples], float corrmatrix[nxyz][nsamples], int nproc){
+
+    long int iter, i, j, k; 
     int ip, is;
-    double stk0p, stk0s;
+    double stk0p, stk0s, stkmax;
+    iter=0;
 
     omp_set_num_threads(nproc);
-
-    #pragma omp parallel for private(ip,is,stk0p,stk0s,k,j)
+    
+    printf(" Detection process complete at : %3d %%",0);
+    #pragma omp parallel for shared(iter) private(ip,is,stkmax,stk0p,stk0s,k,j) 
     for(i=0;i<nxyz;i++){
-       for(k=0;k<noverlap;k++){
+       printf("\b\b\b\b\b%3ld %%", (100*iter++)/(nxyz-2));
+       stkmax=0.;  
+       for(k=0;k<nsamples;k++){
            stk0p=0.;
            stk0s=0.;
            for(j=0;j<nsta;j++){
               ip=itp[i][j] + k;
               is=its[i][j] + k;
-	      if (is < noverlap){
-                  stk0p=stalta_p[j][ip] + stk0p;
-                  stk0s=stalta_s[j][is] + stk0s;
-	      } else {
-	          stk0p=0 + stk0p;
-                  stk0s=0 + stk0s;
-	      }
+                 if (is<nsamples){
+                    stk0p=stalta_p[j][ip] + stk0p;
+                    stk0s=stalta_s[j][is] + stk0s;
+                 }
+                 else {
+                    stk0p=0. + stk0p;
+                    stk0s=0. + stk0s;
+                 }
            }
-       corrmatrix[i][k]=stk0p*stk0s;
+           corrmatrix[i][k]=sqrt(stk0p*stk0s)/((float) nsta);
        }
     }
+    printf("\n ------ Detection Completed ------ \n");
     return 0;
 }
-
