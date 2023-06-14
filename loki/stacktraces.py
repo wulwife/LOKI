@@ -110,7 +110,7 @@ class Stacktraces:
         tracef=num.fft.fft(trace)
         nsta,nfreq=num.shape(tracef)
         freqs=num.fft.fftfreq(nfreq,self.deltat)
-        traceh=tracef+(num.sign(freqs).T*tracef)
+        traceh=-1j*num.sign(freqs).T*tracef
         trace=trace+1j*num.fft.ifft(traceh).real
         return trace
 
