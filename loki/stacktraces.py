@@ -85,7 +85,7 @@ class Stacktraces:
         stream=wobj.stream[comp]
         for i,sta in enumerate(self.stations):
             nstr=num.size(stream[sta][2])
-            idt=num.int((self.dtime_max-stream[sta][0]).total_seconds()/self.deltat)
+            idt=int((self.dtime_max-stream[sta][0]).total_seconds()/self.deltat)
             tr[i,0:nstr-idt]=stream[sta][2][idt:]
             
             if derivative:
