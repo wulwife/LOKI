@@ -132,7 +132,6 @@ class Loki:
                 if search=='classic':
                     iloctime, corrmatrix = location_t0.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)
                 else:
-                    print('voronoi')
                     iloctime, corrmatrix = voronoi_loc.stacking(tp_mod, ts_mod, obs_dataP, obs_dataS, npr)                
                 evtpmin = num.amin(tp_modse[iloctime[0],:])
                 event_t0 = sobj.dtime_max + datetime.timedelta(seconds=iloctime[1]*sobj.deltat) - datetime.timedelta(seconds=evtpmin)  # event origin time
