@@ -1,6 +1,7 @@
 LICENSE
 MANIFEST.in
 README.md
+pyproject.toml
 requirements.txt
 setup.py
 loki/3D_model_Gen.py
@@ -21,13 +22,16 @@ loki.egg-info/SOURCES.txt
 loki.egg-info/dependency_links.txt
 loki.egg-info/requires.txt
 loki.egg-info/top_level.txt
+loki/src_c/detection.c
 loki/src_c/detection_py3_omp.c
 loki/src_c/location_py3_omp.c
 loki/src_c/location_py3_omp_optimized_experimental.c
 loki/src_c/location_t0_py3_omp.c
-loki/src_c/location_t0_py3_omp_plus.c
+loki/src_c/location_t0_py3_omp_bak.c
+loki/src_c/location_t0_py3_omp_voronoi.c
 loki/src_c/p_detection_py3_omp.c
 loki/src_c/stalta_det_py3.c
 loki/src_c/stalta_detector_py3.c
 loki/src_c/stalta_py3.c
 loki/src_c/tt_processing_py3.c
+loki/src_c/voronoi_loc.c

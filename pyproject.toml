@@ -1,0 +1,7 @@
+[build-system]
+requires = [
+  "setuptools>=64",
+  "wheel",
+  "numpy>=1.26",   # headers di NumPy per compilare le estensioni
+]
+build-backend = "setuptools.build_meta"

@@ -3,6 +3,6 @@ LOC_STALTA
 detection
 location
 location_t0
-location_t0_plus
 loki
 tt_processing
+voronoi_loc

@@ -119,17 +119,17 @@ static PyMethodDef module_methods[]={
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef modlocation_t0 = {
+static struct PyModuleDef modvoronoi_loc = {
        PyModuleDef_HEAD_INIT,
-       "location_t0",
+       "voronoi_loc",
        module_docstring,
        -1,
        module_methods
 };
 
-PyMODINIT_FUNC PyInit_location_t0(void){
+PyMODINIT_FUNC PyInit_voronoi_loc(void){
     PyObject *m;
-    m = PyModule_Create(&modlocation_t0);
+    m = PyModule_Create(&modvoronoi_loc);
     if (m==NULL)
        return NULL;
     import_array();

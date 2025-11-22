@@ -17,7 +17,7 @@ inputs['tshortp_max'] = 0.1
 inputs['tshorts_min'] = 0.15
 inputs['tshorts_max'] = 0.15
 inputs['slrat'] = 2
-inputs['npr'] = 2
+inputs['npr'] = 6
 inputs['ntrial'] = 1
 inputs['derivative'] = True
 inputs['vfunc'] = 'erg'
@@ -25,10 +25,11 @@ inputs['hfunc'] = 'pca'
 inputs['model'] = 'layer'
 inputs['epsilon'] = 0.001
 precision = 'single'
+search = 'voronoi'
 comp = ['E', 'N', 'Z']
 extension = '*'
 
 # =========  Call
 
 l1 = Loki(data_path, output_path, db_path, hdr_filename, mode='locator')
-l1.location(extension, comp, precision, **inputs)
+l1.location(extension, comp, precision, search, **inputs)

@@ -1,74 +1,133 @@
 import os
-import numpy
+import sys
+import platform
 from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext
 
-with open("README.md", "r") as fh:
+# ===== Long description / requirements =====
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open("requirements.txt") as f:
+with open("requirements.txt", "r", encoding="utf-8") as f:
     required_list = f.read().splitlines()
 
-# ===================================  DEFINE COMPILER PATH !!!
-# os.environ["CC"] = 'gcc-mp-7'
-os.environ["CC"] = "gcc"
+# ====== Compilatore (opzionale) ======
+# os.environ["CC"] = "gcc"  # lasciare commentato se non necessario
 
+# ====== OpenMP flags cross-platform ======
+def _omp_flags():
+    """
+    Restituisce (extra_compile_args, extra_link_args) per OpenMP
+    a seconda della piattaforma/compilatore.
+    """
+    sysname = platform.system()
+    if sysname == "Darwin":
+        # Clang su macOS richiede libomp (brew install libomp)
+        # e flag diversi
+        return (["-O3", "-Xpreprocessor", "-fopenmp"],
+                ["-lomp"])
+    elif sysname == "Windows":
+        # MSVC
+        return (["/O2", "/openmp"], [])
+    else:
+        # Linux/Unix con gcc
+        return (["-O3", "-fopenmp"],
+                ["-lgomp"])
 
-# ===================================  C - COMPILING
-location = Extension('location',
-                     sources=['loki/src_c/location_py3_omp.c'],
-                     include_dirs=[numpy.get_include()],
-                     extra_compile_args=['-O3', '-fopenmp'],
-                     extra_link_args=['-lgomp'])
+omp_compile_args, omp_link_args = _omp_flags()
 
-location_t0 = Extension('location_t0',
-                     sources=['loki/src_c/location_t0_py3_omp.c'],
-                     include_dirs=[numpy.get_include()],
-                     extra_compile_args=['-O3', '-fopenmp'],
-                     extra_link_args=['-lgomp'])
+# ====== Estensioni C (senza numpy.get_include qui!) ======
+location = Extension(
+    "location",
+    sources=["loki/src_c/location_py3_omp.c"],
+    include_dirs=[],
+    extra_compile_args=omp_compile_args,
+    extra_link_args=omp_link_args,
+)
 
-location_t0_plus = Extension('location_t0_plus',
-                     sources=['loki/src_c/location_t0_py3_omp_plus.c'],
-                     include_dirs=[numpy.get_include()],
-                     extra_compile_args=['-O3', '-fopenmp'],
-                     extra_link_args=['-lgomp'])
+location_t0 = Extension(
+    "location_t0",
+    sources=["loki/src_c/location_t0_py3_omp.c"],
+    include_dirs=[],
+    extra_compile_args=omp_compile_args,
+    extra_link_args=omp_link_args,
+)
 
-detection = Extension('detection',
-                      sources=['loki/src_c/detection_py3_omp.c'],
-                      include_dirs=[numpy.get_include()],
-                      extra_compile_args=['-O3', '-fopenmp'],
-                      extra_link_args=['-lgomp'])
+voronoi_loc = Extension(
+    "voronoi_loc",
+    sources=["loki/src_c/voronoi_loc.c"],
+    include_dirs=[],
+    extra_compile_args=omp_compile_args,
+    extra_link_args=omp_link_args,
+)
 
-tt_processing = Extension('tt_processing',
-                          sources=['loki/src_c/tt_processing_py3.c'],
-                          include_dirs=[numpy.get_include()],
-                          extra_compile_args=['-O3', '-fopenmp'],
-                          extra_link_args=['-lgomp'])
+detection = Extension(
+    "detection",
+    sources=["loki/src_c/detection_py3_omp.c"],
+    include_dirs=[],
+    extra_compile_args=omp_compile_args,
+    extra_link_args=omp_link_args,
+)
 
-LOC_STALTA = Extension('LOC_STALTA',
-                       sources=['loki/src_c/stalta_py3.c'],
-                       include_dirs=[numpy.get_include()],
-                       extra_compile_args=['-O3'])
+tt_processing = Extension(
+    "tt_processing",
+    sources=["loki/src_c/tt_processing_py3.c"],
+    include_dirs=[],
+    extra_compile_args=omp_compile_args,
+    extra_link_args=omp_link_args,
+)
 
-DET_STALTA = Extension('DET_STALTA',
-                       sources=['loki/src_c/stalta_det_py3.c'],
-                       include_dirs=[numpy.get_include()],
-                       extra_compile_args=['-O3'])
+LOC_STALTA = Extension(
+    "LOC_STALTA",
+    sources=["loki/src_c/stalta_py3.c"],
+    include_dirs=[],
+    extra_compile_args=["-O3"],
+    extra_link_args=[],
+)
 
+DET_STALTA = Extension(
+    "DET_STALTA",
+    sources=["loki/src_c/stalta_det_py3.c"],
+    include_dirs=[],
+    extra_compile_args=["-O3"],
+    extra_link_args=[],
+)
 
-# ===================================  SETUP
+ext_modules = [
+    location,
+    location_t0,
+    voronoi_loc,
+    detection,
+    tt_processing,
+    LOC_STALTA,
+    DET_STALTA,
+]
+
+# ====== build_ext custom: aggiunge numpy.get_include() al volo ======
+class BuildExtWithNumpy(build_ext):
+    def finalize_options(self):
+        super().finalize_options()
+        # importa numpy SOLO ora (dopo che pip l'ha installato via pyproject)
+        import numpy
+        np_inc = numpy.get_include()
+        for ext in self.extensions:
+            if np_inc not in ext.include_dirs:
+                ext.include_dirs.append(np_inc)
+
+# ====== setup() ======
 setup(
     name="loki",
     version="1.0.0",
     author="Francesco Grigoli",
     author_email="fsco.grigoli@gmail.com",
-    description="Location of seismic events through traveltime staking",
+    description="Location of seismic events through traveltime stacking",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/wulwife/LOKI",
-    python_requires='>=3.6',
+    python_requires=">=3.8",
     install_requires=required_list,
     packages=find_packages(),
-    package_data={"loki": ['src_c/*.c']},
+    package_data={"loki": ["src_c/*.c"]},
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -76,52 +135,6 @@ setup(
         "Operating System :: Unix, MacOS",
         "Intended Audience :: Science/Research",
     ],
-    ext_modules=[location,
-                 location_t0,
-                 location_t0_plus,
-                 detection,
-                 tt_processing,
-                 LOC_STALTA,
-                 DET_STALTA]
+    ext_modules=ext_modules,
+    cmdclass={"build_ext": BuildExtWithNumpy},
 )
-
-
-# =================================== HELP
-
-# In this example, setup() is called with additional meta-information,
-# which is recommended when distribution packages have to be built.
-# For the extension itself, it specifies preprocessor defines,
-# include directories, library directories, and libraries.
-# Depending on the compiler, distutils passes this information in
-# different ways to the compiler.
-# For example, on Unix, this may result in the compilation commands
-
-# ```
-# gcc -DNDEBUG -g -O3 -Wall -Wstrict-prototypes -fPIC -DMAJOR_VERSION=1 \
-#     -DMINOR_VERSION=0 -I/usr/local/include \
-#     -I/usr/local/include/python2.2 -c demo.c \
-#     -o build/temp.linux-i686-2.2/demo.o
-
-# gcc -shared build/temp.linux-i686-2.2/demo.o -L/usr/local/lib -ltcl83
-#     -o build/lib.linux-i686-2.2/demo.so
-# ```
-
-# These lines are for demonstration purposes only; distutils users
-# should trust that distutils gets the invocations right.
-
-# The manifest template has one command per line, where each command specifies a set of files to include or exclude from the source distribution. For an example, again we turn to the Distutils’ own manifest template:
-
-# include *.txt
-# recursive-include examples *.txt *.py
-# prune examples/sample?/build
-
-# The meanings should be fairly clear: include all files in the
-# distribution root matching *.txt, all files anywhere under the examples
-# directory matching *.txt or *.py, and exclude all directories matching
-# examples/sample?/build. All of this is done after the standard include
-# set, so you can exclude files from the standard set with explicit
-# instructions in the manifest template. (Or, you can use the --no-defaults
-# option to disable the standard set entirely.)
-# There are several other commands available in the manifest template
-# mini-language; see section Creating a source distribution:
-# the sdist command.

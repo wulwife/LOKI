@@ -1,7 +1,7 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: loki
 Version: 1.0.0
-Summary: Location of seismic events through traveltime staking
+Summary: Location of seismic events through traveltime stacking
 Home-page: https://github.com/wulwife/LOKI
 Author: Francesco Grigoli
 Author-email: fsco.grigoli@gmail.com
@@ -9,12 +9,22 @@ Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: Unix, MacOS
 Classifier: Intended Audience :: Science/Research
-Requires-Python: >=3.6
+Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: numpy>=1.18
 Requires-Dist: matplotlib>=2.1.0
 Requires-Dist: obspy>=1.2
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 # LOKI
 
