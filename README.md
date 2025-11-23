@@ -19,7 +19,7 @@ For more information please see [conda](https://docs.conda.io/en/latest/) or [pi
 For example:
 
 ```bash
-$ conda create -n loki python=3.7
+$ conda create -n loki python=3.X
 $ conda activate loki
 ```
 
