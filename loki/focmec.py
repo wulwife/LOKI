@@ -51,7 +51,7 @@ class Focmec:
         self.phases = inputs.get('fm_phases', 'PS')          # 'P' or 'PS' (only for 'amp')
         self.twinp = inputs.get('fm_twinp', [0.2, 0.6])      # P window [pre, post] (s)
         self.twins = inputs.get('fm_twins', [0.2, 0.8])      # S window [pre, post] (s)
-        self.tshift = inputs.get('fm_tshift', 0.2)           # max common time shift (s)
+        self.tshift = inputs.get('fm_tshift', 0.1)           # max common time shift (s)
         self.nneigh = inputs.get('fm_nneigh', 1)             # +-nodes around LOKI location
         self.dsdr = inputs.get('fm_dsdr', [5., 5., 5.])      # strike, dip, rake steps (deg)
         self.vrec = inputs.get('fm_vrec', None)              # [vp, vs] below receivers (km/s)
@@ -114,6 +114,10 @@ class Focmec:
         S, D, R = num.meshgrid(strike, dip, rake, indexing='ij')
         self.sdr = num.vstack((S.ravel(), D.ravel(), R.ravel())).T
         self.mgrid = sdr2mt(self.sdr[:, 0], self.sdr[:, 1], self.sdr[:, 2])   # (nmech, 6) ENU-D basis
+        # coarse grid (double steps) for the joint node / time-shift search
+        sel = ((num.round(self.sdr[:, 0]/dsdr[0]) % 2 == 0) & (num.round(self.sdr[:, 1]/dsdr[1]) % 2 == 0)
+               & (num.round((self.sdr[:, 2]+180.)/dsdr[2]) % 2 == 0))
+        self.icoarse = num.where(sel)[0]
 
 
     def ray_geometry(self, tt, inode):
@@ -196,7 +200,8 @@ class Focmec:
         nph = 2 if (self.phases == 'PS' and self.method == 'amp') else 1
         W = num.zeros([self.nstation, nph, 3, nw+2*self.ntau])
         mask = num.zeros([self.nstation, nph, nw+2*self.ntau])
-        U = num.stack((self.uE, self.uN, self.uZ), axis=1)     # (nsta, 3, ns)
+        # data Z is positive up, geometry is (E, N, Down): flip the vertical
+        U = num.stack((self.uE, self.uN, -self.uZ), axis=1)    # (nsta, 3, ns) E, N, Down
         for j in range(self.nstation):
             if not self.active[j]:
                 continue
@@ -233,18 +238,29 @@ class Focmec:
                 for iz in range(iz0-nn, iz0+nn+1):
                     if 0 <= ix < nx and 0 <= iy < ny and 0 <= iz < nz:
                         nodes.append(num.ravel_multi_index((ix, iy, iz), (nx, ny, nz)))
-        best = {'cmax': -1.}
+        # 1) coarse mechanism grid: joint search over nodes and time shifts
+        ntau = int(round(self.tshift/self.deltat))
+        cbest = -1.
         for inode in nodes:
             K, radp, lp = self.kernels(tp, ts, inode)
             W = self.windows(tp, ts, inode, t0)
             if self.method == 'amp':
-                res = self.search_amp(K, W)
+                res = self.search_amp(K, W, self.icoarse, range(2*ntau+1))
             else:
-                res = self.search_pol(radp, lp, W)
-            if res['cmax'] > best['cmax']:
-                best = res
-                best['inode'] = inode
-                best['K'] = K; best['W'] = W; best['radp'] = radp; best['lp'] = lp
+                res = self.search_pol(radp, lp, W, self.icoarse, range(2*ntau+1))
+            if res['cmax'] > cbest:
+                cbest = res['cmax']; ibest = inode; itb = res['itau']+ntau
+        # 2) fine mechanism grid at the best node, best shift +-1 sample
+        K, radp, lp = self.kernels(tp, ts, ibest)
+        W = self.windows(tp, ts, ibest, t0)
+        taus = range(max(itb-1, 0), min(itb+2, 2*ntau+1))
+        iall = num.arange(num.shape(self.mgrid)[0])
+        if self.method == 'amp':
+            best = self.search_amp(K, W, iall, taus)
+        else:
+            best = self.search_pol(radp, lp, W, iall, taus)
+        best['inode'] = ibest
+        best['K'] = K; best['W'] = W; best['radp'] = radp; best['lp'] = lp
         ix, iy, iz = num.unravel_index(best['inode'], (nx, ny, nz))
         best['xyz'] = [self.tobj.x[ix], self.tobj.y[iy], self.tobj.z[iz]]
         best['tshift'] = best['itau']*self.deltat
@@ -253,7 +269,7 @@ class Focmec:
         return best
 
 
-    def search_amp(self, K, W):
+    def search_amp(self, K, W, imgrid, taus):
         nsta, nph = num.shape(K)[0:2]
         # per station elementary stacks Ej[k, t] and normalisation matrices
         Ej = num.einsum('jpkc,jpct->jkt', K, W)                 # (nsta, 6, nt_ext)
@@ -261,16 +277,17 @@ class Focmec:
         Ej = Ej*self.active[:, None, None]
         Qj = Qj*self.active[:, None, None]
         E = num.sum(Ej, axis=0); Q = num.sum(Qj, axis=0)
-        qn = qform(self.mgrid, Q)
+        mg = self.mgrid[imgrid]
+        qn = qform(mg, Q)
         cmax = -1.
-        for it in range(2*self.ntau+1):
+        for it in taus:
             Es = E[:, it:it+self.nw]
             H = num.dot(Es, Es.T)
             Ed = num.sum(W[:, :, :, it:it+self.nw]**2)
-            c = qform(self.mgrid, H)/(qn*Ed)
+            c = qform(mg, H)/(qn*Ed)
             ib = num.argmax(c)
             if c[ib] > cmax:
-                cmax = c[ib]; imech = ib; itbest = it; cbest = c.copy(); Hbest = H; Edbest = Ed
+                cmax = c[ib]; imech = imgrid[ib]; itbest = it; cbest = c.copy(); Hbest = H; Edbest = Ed
         res = {'cmax': cmax, 'itau': itbest-self.ntau, 'coh': cbest}
         res['Ej'] = Ej[:, :, itbest:itbest+self.nw]
         res['Qj'] = Qj
@@ -293,26 +310,25 @@ class Focmec:
         return res
 
 
-    def search_pol(self, radp, lp, W):
+    def search_pol(self, radp, lp, W, imgrid, taus):
         # P projection on the predicted P direction, station normalised
         D = num.einsum('jc,jct->jt', lp, W[:, 0, :, :])
         nrm = num.sqrt(num.sum(D**2, axis=1)); nrm[nrm == 0] = 1.
         D = D/nrm[:, None]
         D = D*self.active[:, None]
         nact = num.sum(self.active)
-        B = mt_basis()
-        A = num.sign(num.dot(self.mgrid, radp.T))                # (nmech, nsta)
+        A = num.sign(num.dot(self.mgrid[imgrid], radp.T))        # (nmech, nsta)
         cmax = -1.
-        for it in range(2*self.ntau+1):
+        for it in taus:
             Ds = D[:, it:it+self.nw]
             S = num.dot(A, Ds)
             c = num.sum(S**2, axis=1)/(nact*num.sum(Ds**2))
             ib = num.argmax(c)
             if c[ib] > cmax:
-                cmax = c[ib]; itbest = it; cbest = c.copy(); imech = ib
+                cmax = c[ib]; itbest = it; cbest = c.copy(); imech = imgrid[ib]; ibl = ib
         res = {'cmax': cmax, 'itau': itbest-self.ntau, 'coh': cbest}
         res['D'] = D[:, itbest:itbest+self.nw]
-        stack = num.dot(A[imech], res['D'])
+        stack = num.dot(A[ibl], res['D'])
         res['imech'], res['sign'], res['lobe'] = self.sign_test(imech, stack)
         res['stack'] = stack*res['sign']
         res['mt_full'] = None; res['c_full'] = None
@@ -320,10 +336,17 @@ class Focmec:
 
 
     def sign_test(self, imech, stack):
-        # zero-phase filtered displacement: dominant lobe positive for +m
-        imx = num.argmax(stack); imn = num.argmin(stack)
-        lobe = (stack[imx]+1e-30)/(abs(stack[imn])+1e-30)
-        if stack[num.argmax(num.abs(stack))] >= 0:
+        # zero-phase filtered displacement: the main lobe at the (shifted)
+        # theoretical arrival is positive for +m. The search is limited to
+        # [-0.1, +0.4] s around the arrival, so that coda / converted phases
+        # later in the window cannot decide the sign
+        pre = min(self.twinp[0], self.twins[0])
+        i1 = max(int(round((pre-0.1)/self.deltat)), 0)
+        i2 = min(int(round((pre+0.4)/self.deltat))+1, num.size(stack))
+        st = stack[i1:i2]
+        imx = num.argmax(st); imn = num.argmin(st)
+        lobe = (st[imx]+1e-30)/(abs(st[imn])+1e-30)
+        if st[num.argmax(num.abs(st))] >= 0:
             return imech, 1., lobe
         s, d, r = self.sdr[imech]
         r2 = r+180. if r < 0 else r-180.
