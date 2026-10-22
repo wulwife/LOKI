@@ -413,7 +413,7 @@ class Focmec:
             pa, ta = pt_axes(sdr2mt(sb[0:1], sb[1:2], sb[2:3])[0])
             for ax_, col in [(pa, 'w'), (ta, 'k')]:
                 x, y = lower_hemi(ax_)
-                ax1.plot(x, y, '.', color=col, ms=3, mec='k', mew=0.3, zorder=10)
+                ax1.plot(x, y, '.', color=col, ms=3, mec='k', mew=0.3, zorder=200)
         if sdr_true is not None:
             ax1.add_collection(beach(sdr_true, xy=(0, 0), width=2, nofill=True, edgecolor='tab:blue', linewidth=1.5))
         ax1.set_xlim(-1.1, 1.1); ax1.set_ylim(-1.1, 1.1); ax1.set_aspect('equal'); ax1.axis('off')
