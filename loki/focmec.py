@@ -534,10 +534,11 @@ def mt_decomposition(m):
 
 
 def lower_hemi(v):
-    # v in (E, N, Down) -> equal area lower hemisphere projection (x=E, y=N)
+    # v in (E, N, Down) -> lower hemisphere projection (x=E, y=N), equidistant
+    # (r = 1 - plunge/90) as used by obspy.imaging.beachball
     if v[2] < 0:
         v = -v
     plunge = num.arcsin(num.clip(v[2], -1, 1))
     az = num.arctan2(v[0], v[1])
-    rr = num.sqrt(2.)*num.sin((num.pi/2.-plunge)/2.)
+    rr = 1.-plunge/(num.pi/2.)
     return rr*num.sin(az), rr*num.cos(az)
