@@ -10,6 +10,7 @@ from loki import traveltimes
 from loki import waveforms
 from loki import stacktraces
 from loki import latlon2cart
+from loki import focmec
 import tt_processing                       # C
 import location_t0                         # C  for multiplying the P- and S-stacking values using this
 import voronoi_loc                   # C  for adding the P- and S-stacking values using this
@@ -82,6 +83,11 @@ class Loki:
             opsf = inputs['opsf']
         else:
             opsf = False
+        if 'focmec' in inputs:
+            # focal mechanism by polarity/radiation pattern corrected stacking
+            fmec = inputs['focmec']
+        else:
+            fmec = False
         
         
         # load traveltime data set
@@ -171,8 +177,20 @@ class Loki:
                 if cmax > cmax_pre:
                     event_t0s_final = copy.deepcopy(event_t0s)
                     cmax_pre = copy.deepcopy(cmax)
+                    iloc_final = iloctime[0]
+                    t0_final = iloctime[1]*sobj.deltat-evtpmin  # origin time (s) from trace start
             
             self.catalogue_creation(event, event_t0s_final, tobj.lat0, tobj.lon0, ntrial, corrmatrix)
+
+            if fmec:
+                # raw (unfiltered) waveforms, aligned as in the location
+                wobj_fm = waveforms.Waveforms(event_path, extension, comp, None)
+                fobj = focmec.Focmec(tobj, **inputs)
+                fobj.focmec_input(wobj_fm, sobj.stations, sobj.dtime_max, sobj.ns, sobj.deltat)
+                fres = fobj.focmec_search(tp_modse, ts_modse, iloc_final, t0_final)
+                fobj.write_results(self.output_path+'/'+event+'/'+event+'.fm')
+                fobj.plot_results(self.output_path+'/'+event+'/'+event+'_fm.png')
+                self.focmec_catalogue(event, event_t0s_final, fobj)
         print('Location process completed!!!')
         gc.collect()
 
@@ -217,6 +235,14 @@ class Loki:
         f.write(event_t0s+'    '+str(late)+'   '+str(lone)+'   '+str(zb)+'   '+str(errmax)+'   '+str(cb)+'   '+str(cmax)+'\n')
         f.close()
 
+    def focmec_catalogue(self, event, event_t0s, fobj):
+        res = fobj.result
+        s, d, r = fobj.sdr[res['imech']]
+        f = open(self.output_path+'/'+'catalogue_focmec', 'a')
+        f.write(event+'   '+event_t0s+'   '+str(s)+'   '+str(d)+'   '+str(r)+'   '+str(res['cmax'])+'   '
+                +str(num.median(res['boot_kagan']))+'\n')
+        f.close()
+
     def coherence_plot(self, event_path, corrmatrix, xax, yax, zax, itrial, normalization=False):
         nx, ny, nz = num.shape(corrmatrix)
         CXY = num.zeros([ny, nx])
@@ -246,7 +272,7 @@ class Loki:
 
         fig, axs = plt.subplots(1,3, figsize=(15, 7.5))
         fig.suptitle('Coherence matrices trial '+str(itrial), fontsize=14, fontweight='bold')
-        cmap = plt.cm.get_cmap('viridis', 100)
+        cmap = plt.get_cmap('viridis', 100)
     
         ax1 = axs[0]
         cs1=ax1.contourf(xax, yax, CXY, 20, cmap=cmap, norm=nrm)
