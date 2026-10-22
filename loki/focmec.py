@@ -29,9 +29,29 @@
 #               pattern only, station normalised traces), as in
 #               Liang (2014, AGU) and Vlcek et al. (2016, Geophys. Prosp.).
 #
-#       The +m / -m ambiguity (both give the same coherence) is resolved with
-#       zero-phase filtered displacement: for the correct sign the dominant
-#       lobe of the stacked pulse is positive.
+#       'area': simplified-waveform stacking. The P, SV and SH windows are
+#               replaced by a fixed pulse scaled by the signed area (integral)
+#               of the displacement inside a short window around the arrival,
+#               projected on the predicted polarisation. The area keeps the
+#               polarity and the relative amplitudes, and is more robust to
+#               noise than a peak value. Three variants (fm_area):
+#                 'pol'   : sign of the P area only (polarity stacking)
+#                 'amp'   : signed areas of P (or P, SV, SH), absolute amplitudes
+#                           (correlation between observed and predicted areas)
+#                 'ratio' : per-station unit vector [P, SV, SH]: only the
+#                           polarities and the S/P (and SV/SH) amplitude ratios
+#                           are used, insensitive to station amplification
+#               The coherence is signed (it changes sign with m), so the
+#               polarity of the solution comes out directly.
+#
+#       The +m / -m ambiguity of 'amp' and 'pol' (both give the same coherence)
+#       is resolved with zero-phase filtered displacement: for the correct sign
+#       the dominant lobe of the stacked pulse is positive.
+#
+#       fm_freesurf=True replaces the incident P / SV polarisation at the
+#       receiver by the free-surface displacement (P-SV reflection coefficients
+#       of the half-space fm_vrec) and doubles SH; needed for amplitude ratios
+#       measured at surface stations.
 #
 #       Coordinates follow LOKI: x=East, y=North, z=Depth (km).
 #       Author: Francesco Grigoli (LOKI), focal mechanism module 2026
@@ -56,6 +76,9 @@ class Focmec:
         self.dsdr = inputs.get('fm_dsdr', [5., 5., 5.])      # strike, dip, rake steps (deg)
         self.vrec = inputs.get('fm_vrec', None)              # [vp, vs] below receivers (km/s)
         self.nboot = inputs.get('fm_nboot', 100)             # bootstrap resamplings
+        self.area = inputs.get('fm_area', 'ratio')           # 'area' method: 'pol', 'amp' or 'ratio'
+        self.awin = inputs.get('fm_awin', [-0.15, 0.15])     # area window around the arrival (s)
+        self.freesurf = inputs.get('fm_freesurf', False)     # free-surface P-SV conversion (needs fm_vrec)
         self.seed = inputs.get('fm_seed', 0)
         self.mech_grid(self.dsdr)
 
@@ -168,11 +191,19 @@ class Focmec:
         # phase ph per unit MT component k
         gp, vp = self.ray_geometry(tp, inode)
         lp, eshp, esvp_s, esvp_r = self.receiver_vectors(gp, vp, None if self.vrec is None else self.vrec[0])
-        nph = 2 if (self.phases == 'PS' and self.method == 'amp') else 1
+        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area')) else 1
         K = num.zeros([self.nstation, nph, 6, 3])
+        fs = self.freesurf and self.vrec is not None
+        if fs:
+            up = free_surface(lp, lp, 'P', self.vrec[0], self.vrec[1])
+        else:
+            up = lp
         B = mt_basis()
         radp = num.einsum('ja,kab,jb->jk', gp, B, gp)          # gamma^T B_k gamma
-        K[:, 0, :, :] = (radp/vp[:, None]**3)[:, :, None]*lp[:, None, :]
+        K[:, 0, :, :] = (radp/vp[:, None]**3)[:, :, None]*up[:, None, :]
+        udir = num.zeros([self.nstation, 3, 3])          # unit polarisation of P, SV, SH at the surface
+        udir[:, 0, :] = up/(num.sqrt(num.sum(up**2, axis=1))[:, None]+1e-30)
+        svmask = num.ones(self.nstation, dtype=bool)
         if nph == 2:
             gs, vs = self.ray_geometry(ts, inode)
             ls, esh, esv_s, esv_r = self.receiver_vectors(gs, vs, None if self.vrec is None else self.vrec[1])
@@ -184,8 +215,17 @@ class Focmec:
                 sinir = num.sqrt(ls[:, 0]**2+ls[:, 1]**2)
                 swin = sinir < 0.9*self.vrec[1]/self.vrec[0]
                 radsv = radsv*swin[:, None]
-            K[:, 1, :, :] = ((radsv/vs[:, None]**3)[:, :, None]*esv_r[:, None, :]
-                             + (radsh/vs[:, None]**3)[:, :, None]*esh[:, None, :])
+                svmask = swin
+            if fs:
+                usv = free_surface(esv_r, ls, 'S', self.vrec[0], self.vrec[1])
+                ush = 2.*esh
+            else:
+                usv = esv_r; ush = esh
+            K[:, 1, :, :] = ((radsv/vs[:, None]**3)[:, :, None]*usv[:, None, :]
+                             + (radsh/vs[:, None]**3)[:, :, None]*ush[:, None, :])
+            udir[:, 1, :] = usv/(num.sqrt(num.sum(usv**2, axis=1))[:, None]+1e-30)
+            udir[:, 2, :] = esh
+        self.udir = udir; self.svmask = svmask
         return K, radp, lp
 
 
@@ -197,7 +237,7 @@ class Focmec:
         nwp = int(round((self.twinp[0]+self.twinp[1])/dt))+1
         nws = int(round((self.twins[0]+self.twins[1])/dt))+1
         nw = max(nwp, nws)
-        nph = 2 if (self.phases == 'PS' and self.method == 'amp') else 1
+        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area')) else 1
         W = num.zeros([self.nstation, nph, 3, nw+2*self.ntau])
         mask = num.zeros([self.nstation, nph, nw+2*self.ntau])
         # data Z is positive up, geometry is (E, N, Down): flip the vertical
@@ -232,7 +272,8 @@ class Focmec:
         nx, ny, nz = self.tobj.nx, self.tobj.ny, self.tobj.nz
         ix0, iy0, iz0 = num.unravel_index(iloc, (nx, ny, nz))
         nodes = []
-        nn = self.nneigh if self.method == 'amp' else 0
+        polonly = self.method == 'pol' or (self.method == 'area' and self.area == 'pol')
+        nn = 0 if polonly else self.nneigh
         for ix in range(ix0-nn, ix0+nn+1):
             for iy in range(iy0-nn, iy0+nn+1):
                 for iz in range(iz0-nn, iz0+nn+1):
@@ -240,12 +281,14 @@ class Focmec:
                         nodes.append(num.ravel_multi_index((ix, iy, iz), (nx, ny, nz)))
         # 1) coarse mechanism grid: joint search over nodes and time shifts
         ntau = int(round(self.tshift/self.deltat))
-        cbest = -1.
+        cbest = -num.inf
         for inode in nodes:
             K, radp, lp = self.kernels(tp, ts, inode)
             W = self.windows(tp, ts, inode, t0)
             if self.method == 'amp':
                 res = self.search_amp(K, W, self.icoarse, range(2*ntau+1))
+            elif self.method == 'area':
+                res = self.search_area(K, W, self.icoarse, range(2*ntau+1))
             else:
                 res = self.search_pol(radp, lp, W, self.icoarse, range(2*ntau+1))
             if res['cmax'] > cbest:
@@ -257,6 +300,8 @@ class Focmec:
         iall = num.arange(num.shape(self.mgrid)[0])
         if self.method == 'amp':
             best = self.search_amp(K, W, iall, taus)
+        elif self.method == 'area':
+            best = self.search_area(K, W, iall, taus, full=True)
         else:
             best = self.search_pol(radp, lp, W, iall, taus)
         best['inode'] = ibest
@@ -307,6 +352,80 @@ class Focmec:
             res['c_full'] = lam[-1]/Edbest
         except Exception:
             res['mt_full'] = None; res['c_full'] = None
+        return res
+
+
+    def area_obs(self, K, W, it):
+        # signed areas of the displacement inside the area window, projected on
+        # the predicted P, SV, SH polarisations; returns A (nsta, ncomp) and the
+        # scalar kernels G (nsta, ncomp, 6)
+        dt = self.deltat
+        nph = num.shape(K)[1]
+        ncomp = 1 if nph == 1 else 3
+        A = num.zeros([self.nstation, ncomp]); G = num.zeros([self.nstation, ncomp, 6])
+        for c in range(ncomp):
+            ph = 0 if c == 0 else 1
+            pre = self.twinp[0] if ph == 0 else self.twins[0]
+            a1 = it+int(round((pre+self.awin[0])/dt)); a2 = it+int(round((pre+self.awin[1])/dt))+1
+            A[:, c] = num.einsum('jat,ja->j', W[:, ph, :, a1:a2], self.udir[:, c, :])*dt
+            G[:, c, :] = num.einsum('jka,ja->jk', K[:, ph, :, :], self.udir[:, c, :])
+        if ncomp == 3:
+            A[~self.svmask, 1] = 0.; G[~self.svmask, 1, :] = 0.
+        A = A*self.active[:, None]; G = G*self.active[:, None, None]
+        return A, G
+
+
+    def area_contrib(self, A, G, mg):
+        # per-station contributions c[n, j] for 'ratio' and 'pol' (mean over
+        # stations = coherence)
+        if self.area == 'pol':
+            sgn = num.sign(A[:, 0])
+            Pp = num.dot(mg, G[:, 0, :].T)                              # (nmech, nsta)
+            sec = Pp/(num.max(num.abs(Pp), axis=1)[:, None]+1e-30)     # tie-break: margin from nodal planes
+            return sgn[None, :]*(num.sign(Pp)+1e-3*sec)
+        an = num.sqrt(num.sum(A**2, axis=1))
+        ah = A/(an[:, None]+1e-30)
+        P = num.einsum('jck,nk->njc', G, mg)
+        pn = num.sqrt(num.sum(P**2, axis=2))
+        return num.einsum('njc,jc->nj', P, ah)/(pn+1e-30)
+
+
+    def search_area(self, K, W, imgrid, taus, full=False):
+        mg = self.mgrid[imgrid]
+        cmax = -num.inf
+        for it in taus:
+            A, G = self.area_obs(K, W, it)
+            valid = self.active & (num.sum(A**2, axis=1) > 0)
+            nv = max(num.sum(valid), 1)
+            if self.area == 'amp':
+                G2 = G.reshape(-1, 6); a = A.ravel()
+                g = num.dot(G2.T, a); Q = num.dot(G2.T, G2)
+                c = num.dot(mg, g)/(num.sqrt(qform(mg, Q))+1e-30)/(num.sqrt(num.sum(a**2))+1e-30)
+                cj = None
+            else:
+                cj = self.area_contrib(A, G, mg)*valid[None, :]
+                c = num.sum(cj, axis=1)/nv
+            ib = num.argmax(c)
+            if c[ib] > cmax:
+                cmax = c[ib]; imech = imgrid[ib]; itbest = it; cbest = c.copy(); Abest = A; Gbest = G; cjbest = cj
+                vbest = valid
+        res = {'cmax': cmax, 'itau': itbest-self.ntau, 'coh': cbest, 'imech': imech, 'sign': 1., 'lobe': 1.}
+        res['A'] = Abest; res['G'] = Gbest; res['valid'] = vbest
+        if full and cjbest is not None:
+            res['cj'] = cjbest
+        # simplified stacked waveform (fixed pulse scaled by the coherence)
+        tt = num.arange(self.nw)*self.deltat-self.twinp[0]
+        res['stack'] = cmax*num.exp(-0.5*(tt/0.06)**2)
+        res['mt_full'] = None; res['c_full'] = None
+        if self.area == 'amp':
+            G2 = Gbest.reshape(-1, 6); a = Abest.ravel()
+            g = num.dot(G2.T, a); Q = num.dot(G2.T, G2)
+            try:
+                mf = num.linalg.solve(Q+1e-12*num.trace(Q)*num.eye(6), g)
+                res['mt_full'] = mf/num.sqrt(num.sum(mf**2))
+                res['c_full'] = float(num.sqrt(num.dot(g, mf))/(num.sqrt(num.sum(a**2))+1e-30))
+            except num.linalg.LinAlgError:
+                pass
         return res
 
 
@@ -362,8 +481,21 @@ class Focmec:
         kag = []; sdrb = []
         if self.method == 'pol':
             A = num.sign(num.dot(self.mgrid, res['radp'].T))
+        if self.method == 'area' and self.area == 'amp':
+            gj = num.einsum('jck,jc->jk', res['G'], res['A'])
+            Qj = num.einsum('jck,jcl->jkl', res['G'], res['G'])
+            aj = num.sum(res['A']**2, axis=1)
         for ib in range(self.nboot):
             w = num.bincount(rng.choice(idx, size=num.size(idx)), minlength=self.nstation).astype(float)
+            if self.method == 'area':
+                if self.area == 'amp':
+                    c = num.dot(self.mgrid, num.dot(w, gj))/(num.sqrt(qform(self.mgrid, num.einsum('j,jkl->kl', w, Qj)))+1e-30)
+                else:
+                    c = num.dot(res['cj'], w)
+                im = num.argmax(c)
+                sdrb.append(self.sdr[im])
+                kag.append(kagan_angle(mbest, self.mgrid[im]))
+                continue
             if self.method == 'amp':
                 E = num.einsum('j,jkt->kt', w, res['Ej'])
                 Q = num.einsum('j,jkl->kl', w, res['Qj'])
@@ -459,6 +591,42 @@ def sdr2mt(strike, dip, rake):
     mxz = -(num.cos(d)*num.cos(r)*num.cos(s)+num.cos(2*d)*num.sin(r)*num.sin(s))
     myz = -(num.cos(d)*num.cos(r)*num.sin(s)-num.cos(2*d)*num.sin(r)*num.cos(s))
     return num.vstack((myy, mxx, mzz, mxy, myz, mxz)).T
+
+
+def free_surface(dvec, lvec, ptype, vp, vs):
+    """Surface displacement for a unit plane wave incident on the free surface
+    of a half-space (vp, vs; density cancels). dvec: incident polarisation
+    (nsta, 3) in (E, N, Down); lvec: ray direction at the receiver (upgoing);
+    ptype: 'P' or 'S' (SV). The reflected P and SV amplitudes are found from
+    the zero-traction conditions; returns the total displacement (nsta, 3)
+    (real part: beyond the S-to-P critical angle SV gets a phase shift)."""
+    from numpy.lib.scimath import sqrt as csqrt
+    mu = vs**2; lam = vp**2-2.*vs**2
+    v = vp if ptype == 'P' else vs
+    out = num.zeros(num.shape(dvec))
+    for j in range(num.shape(dvec)[0]):
+        h = num.array([lvec[j, 0], lvec[j, 1], 0.])
+        sh = num.sqrt(num.sum(h**2))
+        rr = h/sh if sh > 1e-9 else num.array([1., 0., 0.])
+        p = sh/v
+        qa = csqrt(1./vp**2-p**2); qb = csqrt(1./vs**2-p**2)
+        q = qa if ptype == 'P' else qb
+        s_in = num.array([p, -q]); d_in = num.array([num.dot(dvec[j], rr), dvec[j, 2]])
+        s_rp = num.array([p, qa]); d_rp = vp*s_rp
+        s_rs = num.array([p, qb]); d_rs = vs*num.array([qb, -p])
+
+        def trac(sv, dv):
+            return num.array([mu*(sv[1]*dv[0]+sv[0]*dv[1]),
+                              lam*(sv[0]*dv[0]+sv[1]*dv[1])+2.*mu*sv[1]*dv[1]])
+        M = num.vstack((trac(s_rp, d_rp), trac(s_rs, d_rs))).T
+        try:
+            amp = num.linalg.solve(M, -trac(s_in, d_in))
+        except num.linalg.LinAlgError:
+            amp = num.zeros(2)
+        u = d_in+amp[0]*d_rp+amp[1]*d_rs
+        u = num.real(u)
+        out[j] = u[0]*rr+num.array([0., 0., u[1]])
+    return out
 
 
 def m6_to_m33(m):
