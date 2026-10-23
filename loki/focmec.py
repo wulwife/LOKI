@@ -48,6 +48,20 @@
 #       is resolved with zero-phase filtered displacement: for the correct sign
 #       the dominant lobe of the stacked pulse is positive.
 #
+#       'wavelet': as 'area', but the signed amplitude of each P, SV, SH arrival
+#               is the coefficient of a complex Morlet transform (fm_w0) of the
+#               displacement, normalised so that for a pulse shorter than the
+#               wavelet it equals the signed area (low-frequency level). The
+#               scale is chosen per event and per phase as the lowest frequency
+#               whose median SNR over stations (noise from the pre-event part,
+#               same scale) is at least fm_wsnr times the best one; the arrival is re-aligned per station at the maximum
+#               of the modulus within +-fm_talign; the value used is the real
+#               part there (|W| cos(phase): polarity with its own confidence).
+#
+#       fm_align=True ('area'): per-station re-alignment of the integration
+#       window on the envelope maximum within +-fm_talign, instead of the
+#       common time shift.
+#
 #       fm_freesurf=True replaces the incident P / SV polarisation at the
 #       receiver by the free-surface displacement (P-SV reflection coefficients
 #       of the half-space fm_vrec) and doubles SH; needed for amplitude ratios
@@ -79,6 +93,12 @@ class Focmec:
         self.area = inputs.get('fm_area', 'ratio')           # 'area' method: 'pol', 'amp' or 'ratio'
         self.awin = inputs.get('fm_awin', [-0.15, 0.15])     # area window around the arrival (s)
         self.freesurf = inputs.get('fm_freesurf', False)     # free-surface P-SV conversion (needs fm_vrec)
+        self.align = inputs.get('fm_align', False)           # per-station re-alignment ('area'; always on for 'wavelet')
+        self.talign = inputs.get('fm_talign', 0.2)           # re-alignment half-width (s)
+        self.w0 = inputs.get('fm_w0', 3.)                    # Morlet central frequency (rad)
+        self.wfreq = inputs.get('fm_wfreq', [0.4, 4.0, 10])  # wavelet frequencies: min, max (Hz), number
+        self.wsnr = inputs.get('fm_wsnr', 0.7)               # scale: lowest frequency with median SNR >= wsnr*max
+        self.wcommon = inputs.get('fm_wcommon', True)        # same scale for P and S (the lower frequency of the two)
         self.seed = inputs.get('fm_seed', 0)
         self.mech_grid(self.dsdr)
 
@@ -191,7 +211,7 @@ class Focmec:
         # phase ph per unit MT component k
         gp, vp = self.ray_geometry(tp, inode)
         lp, eshp, esvp_s, esvp_r = self.receiver_vectors(gp, vp, None if self.vrec is None else self.vrec[0])
-        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area')) else 1
+        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area', 'wavelet')) else 1
         K = num.zeros([self.nstation, nph, 6, 3])
         fs = self.freesurf and self.vrec is not None
         if fs:
@@ -237,7 +257,7 @@ class Focmec:
         nwp = int(round((self.twinp[0]+self.twinp[1])/dt))+1
         nws = int(round((self.twins[0]+self.twins[1])/dt))+1
         nw = max(nwp, nws)
-        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area')) else 1
+        nph = 2 if (self.phases == 'PS' and self.method in ('amp', 'area', 'wavelet')) else 1
         W = num.zeros([self.nstation, nph, 3, nw+2*self.ntau])
         mask = num.zeros([self.nstation, nph, nw+2*self.ntau])
         # data Z is positive up, geometry is (E, N, Down): flip the vertical
@@ -272,7 +292,8 @@ class Focmec:
         nx, ny, nz = self.tobj.nx, self.tobj.ny, self.tobj.nz
         ix0, iy0, iz0 = num.unravel_index(iloc, (nx, ny, nz))
         nodes = []
-        polonly = self.method == 'pol' or (self.method == 'area' and self.area == 'pol')
+        polonly = self.method == 'pol' or (self.method in ('area', 'wavelet') and self.area == 'pol')
+        self._tp = tp; self._ts = ts; self._t0 = t0
         nn = 0 if polonly else self.nneigh
         for ix in range(ix0-nn, ix0+nn+1):
             for iy in range(iy0-nn, iy0+nn+1):
@@ -285,9 +306,10 @@ class Focmec:
         for inode in nodes:
             K, radp, lp = self.kernels(tp, ts, inode)
             W = self.windows(tp, ts, inode, t0)
+            self._inode = inode
             if self.method == 'amp':
                 res = self.search_amp(K, W, self.icoarse, range(2*ntau+1))
-            elif self.method == 'area':
+            elif self.method in ('area', 'wavelet'):
                 res = self.search_area(K, W, self.icoarse, range(2*ntau+1))
             else:
                 res = self.search_pol(radp, lp, W, self.icoarse, range(2*ntau+1))
@@ -296,11 +318,12 @@ class Focmec:
         # 2) fine mechanism grid at the best node, best shift +-1 sample
         K, radp, lp = self.kernels(tp, ts, ibest)
         W = self.windows(tp, ts, ibest, t0)
+        self._inode = ibest
         taus = range(max(itb-1, 0), min(itb+2, 2*ntau+1))
         iall = num.arange(num.shape(self.mgrid)[0])
         if self.method == 'amp':
             best = self.search_amp(K, W, iall, taus)
-        elif self.method == 'area':
+        elif self.method in ('area', 'wavelet'):
             best = self.search_area(K, W, iall, taus, full=True)
         else:
             best = self.search_pol(radp, lp, W, iall, taus)
@@ -359,18 +382,132 @@ class Focmec:
         # signed areas of the displacement inside the area window, projected on
         # the predicted P, SV, SH polarisations; returns A (nsta, ncomp) and the
         # scalar kernels G (nsta, ncomp, 6)
+        if self.method == 'wavelet':
+            return self.wavelet_obs(K)
         dt = self.deltat
         nph = num.shape(K)[1]
         ncomp = 1 if nph == 1 else 3
         A = num.zeros([self.nstation, ncomp]); G = num.zeros([self.nstation, ncomp, 6])
+        if self.align:
+            sh = self.align_shifts(W, it)
         for c in range(ncomp):
             ph = 0 if c == 0 else 1
             pre = self.twinp[0] if ph == 0 else self.twins[0]
-            a1 = it+int(round((pre+self.awin[0])/dt)); a2 = it+int(round((pre+self.awin[1])/dt))+1
-            A[:, c] = num.einsum('jat,ja->j', W[:, ph, :, a1:a2], self.udir[:, c, :])*dt
             G[:, c, :] = num.einsum('jka,ja->jk', K[:, ph, :, :], self.udir[:, c, :])
+            if not self.align:
+                a1 = it+int(round((pre+self.awin[0])/dt)); a2 = it+int(round((pre+self.awin[1])/dt))+1
+                A[:, c] = num.einsum('jat,ja->j', W[:, ph, :, a1:a2], self.udir[:, c, :])*dt
+            else:
+                for j in range(self.nstation):
+                    a1 = it+sh[j, ph]+int(round((pre+self.awin[0])/dt)); a2 = it+sh[j, ph]+int(round((pre+self.awin[1])/dt))+1
+                    A[j, c] = num.dot(num.dot(self.udir[j, c, :], W[j, ph, :, a1:a2]), num.ones(a2-a1))*dt
         if ncomp == 3:
             A[~self.svmask, 1] = 0.; G[~self.svmask, 1, :] = 0.
+        A = A*self.active[:, None]; G = G*self.active[:, None, None]
+        return A, G
+
+
+    def align_shifts(self, W, it):
+        # per-station shift (samples) of the arrival: maximum of the envelope of
+        # the 3C displacement (P: all components; S: horizontal) within
+        # +-talign, limited so that the integration window stays in W
+        from scipy.signal import hilbert
+        dt = self.deltat
+        nph = num.shape(W)[1]
+        nwx = num.shape(W)[-1]
+        sh = num.zeros([self.nstation, nph], dtype=int)
+        nal = int(round(self.talign/dt))
+        for ph in range(nph):
+            pre = self.twinp[0] if ph == 0 else self.twins[0]
+            i0 = it+int(round(pre/dt))
+            comps = [0, 1, 2] if ph == 0 else [0, 1]
+            env = num.sqrt(num.sum(num.abs(hilbert(W[:, ph, comps, :], axis=-1))**2, axis=1))
+            lo = max(-nal, -i0-int(round(self.awin[0]/dt)))
+            hi = min(nal, nwx-1-i0-int(round(self.awin[1]/dt)))
+            for j in range(self.nstation):
+                seg = env[j, i0+lo:i0+hi+1]
+                if num.size(seg) and num.max(seg) > 0:
+                    sh[j, ph] = lo+int(num.argmax(seg))
+        return sh
+
+
+    def wavelet_prepare(self):
+        # complex Morlet transform of the 3C displacement (E, N, Down) for all
+        # scales; area normalisation: W = signed area for short pulses
+        from scipy.signal import fftconvolve
+        dt = self.deltat
+        f = num.geomspace(self.wfreq[0], self.wfreq[1], int(self.wfreq[2]))
+        sc = self.w0/(2.*num.pi*f)
+        U = num.stack((self.uE, self.uN, -self.uZ), axis=1)
+        cw = num.zeros([num.size(f), self.nstation, 3, self.ns], dtype=num.complex128)
+        for k in range(num.size(f)):
+            L = int(num.ceil(4.*sc[k]/dt))
+            t = num.arange(-L, L+1)*dt
+            psi = num.exp(-0.5*(t/sc[k])**2)*num.exp(1j*self.w0*t/sc[k])
+            cw[k] = fftconvolve(U, psi[None, None, :], mode='same', axes=-1)*dt
+        self._wf = f; self._ws = sc; self._cwt = cw
+
+
+    def wavelet_obs(self, K):
+        if not hasattr(self, '_cwt'):
+            self.wavelet_prepare()
+        dt = self.deltat
+        tp = self._tp[self._inode, :]; ts = self._ts[self._inode, :]; t0 = self._t0
+        nph = num.shape(K)[1]
+        ncomp = 1 if nph == 1 else 3
+        nf = num.size(self._wf)
+        nal = int(round(self.talign/dt))
+        G = num.zeros([self.nstation, ncomp, 6])
+        for c in range(ncomp):
+            G[:, c, :] = num.einsum('jka,ja->jk', K[:, 0 if c == 0 else 1, :, :], self.udir[:, c, :])
+        # noise level per scale and station (pre-event, isotropic)
+        n1 = int((t0+num.min(tp)-0.5)/dt)
+        sig = num.zeros([nf, self.nstation])
+        for k in range(nf):
+            n0 = min(int(4.*self._ws[k]/dt), max(n1-20, 0))
+            seg = self._cwt[k, :, :, n0:max(n1, n0+10)]
+            sig[k] = num.sqrt(num.mean(num.abs(seg)**2, axis=(1, 2)))+1e-30
+        Ak = num.zeros([nf, self.nstation, ncomp]); snr = num.zeros([nf, self.nstation, 2])
+        okp = num.zeros([nf, self.nstation], dtype=bool)
+        for k in range(nf):
+            okp[k] = (2.*self._ws[k] <= (ts-tp)) & self.active
+            for j in range(self.nstation):
+                if not self.active[j]:
+                    continue
+                ip = int(round((t0+tp[j])/dt))
+                a = max(ip-nal, 0); b = min(ip+nal+1, self.ns)
+                wp = num.dot(self.udir[j, 0, :], self._cwt[k, j, :, a:b])
+                m = int(num.argmax(num.abs(wp)))
+                Ak[k, j, 0] = wp[m].real*tp[j]
+                snr[k, j, 0] = num.abs(wp[m])/sig[k, j]
+                if ncomp == 3:
+                    i_s = int(round((t0+ts[j])/dt))
+                    a = max(i_s-nal, 0); b = min(i_s+nal+1, self.ns)
+                    wsv = num.dot(self.udir[j, 1, :], self._cwt[k, j, :, a:b])*self.svmask[j]
+                    wsh = num.dot(self.udir[j, 2, :], self._cwt[k, j, :, a:b])
+                    e2 = num.abs(wsv)**2+num.abs(wsh)**2
+                    m = int(num.argmax(e2))
+                    Ak[k, j, 1] = wsv[m].real*tp[j]; Ak[k, j, 2] = wsh[m].real*tp[j]
+                    snr[k, j, 1] = num.sqrt(e2[m])/sig[k, j]
+        # lowest frequency (closest to the low-frequency level, least sensitive
+        # to timing and scattering) whose median SNR is within wsnr of the best
+        medp = num.array([num.median(snr[k, okp[k], 0]) if num.any(okp[k]) else 0. for k in range(nf)])
+        kp = int(num.where(medp >= self.wsnr*num.max(medp))[0][0])
+        A = num.zeros([self.nstation, ncomp])
+        A[:, 0] = Ak[kp, :, 0]*okp[kp]
+        self._wsel = [self._wf[kp]]
+        if ncomp == 3:
+            meds = num.median(snr[:, self.active, 1], axis=1)
+            ks = int(num.where(meds >= self.wsnr*num.max(meds))[0][0])
+            if self.wcommon:
+                # amplitudes of P and S compared at the same frequency (S/P ratios)
+                kp = ks = min(kp, ks)
+                A[:, 0] = Ak[kp, :, 0]*okp[kp]
+                self._wsel = [self._wf[kp]]
+            A[:, 1:] = Ak[ks, :, 1:]
+            self._wsel.append(self._wf[ks])
+            A[~self.svmask, 1] = 0.; G[~self.svmask, 1, :] = 0.
+        G[A[:, 0] == 0, 0, :] = 0.
         A = A*self.active[:, None]; G = G*self.active[:, None, None]
         return A, G
 
@@ -393,6 +530,8 @@ class Focmec:
     def search_area(self, K, W, imgrid, taus, full=False):
         mg = self.mgrid[imgrid]
         cmax = -num.inf
+        if self.align or self.method == 'wavelet':
+            taus = [self.ntau]                       # per-station alignment replaces the common shift
         for it in taus:
             A, G = self.area_obs(K, W, it)
             valid = self.active & (num.sum(A**2, axis=1) > 0)
@@ -411,6 +550,8 @@ class Focmec:
                 vbest = valid
         res = {'cmax': cmax, 'itau': itbest-self.ntau, 'coh': cbest, 'imech': imech, 'sign': 1., 'lobe': 1.}
         res['A'] = Abest; res['G'] = Gbest; res['valid'] = vbest
+        if self.method == 'wavelet':
+            res['wfreq_sel'] = list(self._wsel)
         if full and cjbest is not None:
             res['cj'] = cjbest
         # simplified stacked waveform (fixed pulse scaled by the coherence)
@@ -481,13 +622,13 @@ class Focmec:
         kag = []; sdrb = []
         if self.method == 'pol':
             A = num.sign(num.dot(self.mgrid, res['radp'].T))
-        if self.method == 'area' and self.area == 'amp':
+        if self.method in ('area', 'wavelet') and self.area == 'amp':
             gj = num.einsum('jck,jc->jk', res['G'], res['A'])
             Qj = num.einsum('jck,jcl->jkl', res['G'], res['G'])
             aj = num.sum(res['A']**2, axis=1)
         for ib in range(self.nboot):
             w = num.bincount(rng.choice(idx, size=num.size(idx)), minlength=self.nstation).astype(float)
-            if self.method == 'area':
+            if self.method in ('area', 'wavelet'):
                 if self.area == 'amp':
                     c = num.dot(self.mgrid, num.dot(w, gj))/(num.sqrt(qform(self.mgrid, num.einsum('j,jkl->kl', w, Qj)))+1e-30)
                 else:
